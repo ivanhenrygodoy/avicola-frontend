@@ -2,7 +2,7 @@
 import BaseModal from './BaseModal.vue'
 import { Loader2 } from 'lucide-vue-next'
 
-defineProps({
+const props = defineProps({
   isOpen: {
     type: Boolean,
     required: true,
@@ -13,7 +13,11 @@ defineProps({
   },
   question: {
     type: String,
-    required: true,
+    default: '',
+  },
+  message: {
+    type: String,
+    default: '',
   },
   description: {
     type: String,
@@ -35,18 +39,27 @@ defineProps({
     type: Boolean,
     default: false,
   },
+  isLoading: {
+    type: Boolean,
+    default: false,
+  },
 })
 
-defineEmits(['confirm', 'close'])
+const emit = defineEmits(['confirm', 'close', 'cancel'])
+
+const handleClose = () => {
+  emit('close')
+  emit('cancel')
+}
 </script>
 
 <template>
   <BaseModal
     :is-open="isOpen"
     :show-header="false"
-    :closable="!loading"
+    :closable="!(loading || isLoading)"
     max-width="md"
-    @close="$emit('close')"
+    @close="handleClose"
   >
     <div class="py-4 px-2 text-center space-y-3">
       <!-- Título secundario / contexto (si se proporciona) -->
@@ -61,7 +74,7 @@ defineEmits(['confirm', 'close'])
           title ? 'text-sm font-medium text-verdoso/90' : 'text-lg sm:text-xl'
         ]"
       >
-        {{ question }}
+        {{ question || message }}
       </p>
 
       <!-- Descripción o advertencia centrada -->
@@ -75,8 +88,8 @@ defineEmits(['confirm', 'close'])
       <div class="flex items-center justify-center gap-4 w-full pt-1">
         <button
           type="button"
-          @click="$emit('close')"
-          :disabled="loading"
+          @click="handleClose"
+          :disabled="loading || isLoading"
           class="px-7 py-2.5 btn-secundario text-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
         >
           {{ cancelText }}
@@ -85,13 +98,13 @@ defineEmits(['confirm', 'close'])
         <button
           type="button"
           @click="$emit('confirm')"
-          :disabled="loading"
+          :disabled="loading || isLoading"
           :class="[
             'px-7 py-2.5 text-sm shadow-xs flex items-center gap-2 cursor-pointer',
             isDestructive ? 'btn-destructivo' : 'btn-principal'
           ]"
         >
-          <Loader2 v-if="loading" class="w-4 h-4 animate-spin text-white" />
+          <Loader2 v-if="loading || isLoading" class="w-4 h-4 animate-spin text-white" />
           <span>{{ confirmText }}</span>
         </button>
       </div>

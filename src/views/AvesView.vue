@@ -1162,17 +1162,19 @@ const handleLogout = async () => {
     <BaseConfirmModal
       :is-open="showDeleteModal"
       title="¿Dar de baja a esta ave?"
-      :message="`¿Estás seguro de registrar la salida de ${targetAve?.codigo} (${targetAve?.nombre || targetAve?.especie?.nombre})? Se conservará su historial cronológico de movimientos.`"
+      :question="`¿Estás seguro de registrar la salida de ${targetAve?.codigo} (${targetAve?.nombre || targetAve?.especie?.nombre})?`"
+      description="Se conservará su historial cronológico de movimientos y se actualizará su estado a salida."
       confirm-text="Confirmar Baja"
       cancel-text="Cancelar"
-      :is-loading="isSubmitting"
+      :is-destructive="true"
+      :loading="isSubmitting"
       @confirm="handleConfirmDelete"
-      @cancel="showDeleteModal = false"
+      @close="showDeleteModal = false"
     />
 
     <!-- Overlay de Carga Global Corporativo -->
     <ActionLoader
-      :is-open="showActionLoader"
+      :show="showActionLoader"
       :message="actionLoaderMessage"
     />
   </div>

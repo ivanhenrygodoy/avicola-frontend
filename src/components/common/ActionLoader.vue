@@ -4,6 +4,10 @@ defineProps({
     type: Boolean,
     default: false,
   },
+  isOpen: {
+    type: Boolean,
+    default: false,
+  },
   message: {
     type: String,
     default: 'Procesando acción...',
@@ -27,7 +31,7 @@ defineProps({
       leave-to-class="opacity-0"
     >
       <div
-        v-if="show"
+        v-if="show || isOpen"
         class="fixed inset-0 z-[10000] flex items-center justify-center p-4 select-none"
         style="position: fixed; inset: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; z-index: 10000;"
       >
