@@ -4,6 +4,7 @@ import * as instalacionesService from '@/services/instalaciones'
 export const useInstalacionesStore = defineStore('instalaciones', {
   state: () => ({
     casitas: [],
+    tiposInstalacion: [],
     meta: {
       current_page: 1,
       last_page: 1,
@@ -30,6 +31,15 @@ export const useInstalacionesStore = defineStore('instalaciones', {
   }),
 
   actions: {
+    async fetchTiposInstalacion() {
+      try {
+        const data = await instalacionesService.getTiposInstalacion()
+        this.tiposInstalacion = data || []
+      } catch (err) {
+        console.error('Error al cargar catálogo de tipos de instalación:', err)
+      }
+    },
+
     async fetchCasitas(overrideParams = {}) {
       this.loading = true
       this.error = null

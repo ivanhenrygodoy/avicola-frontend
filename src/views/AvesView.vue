@@ -15,6 +15,7 @@ import StatCard from '@/components/common/StatCard.vue'
 import FloatingInput from '@/components/common/FloatingInput.vue'
 import FloatingSelect from '@/components/common/FloatingSelect.vue'
 import FormField from '@/components/common/FormField.vue'
+import FilterBar from '@/components/common/FilterBar.vue'
 
 // Iconos Lucide
 import {
@@ -116,7 +117,7 @@ const sexoFiltroOptions = computed(() => {
 const formEspecieOptions = computed(() => {
   return avesStore.catalogos.especies.map((esp) => ({
     value: esp.id,
-    label: `${esp.icono || ''} ${esp.nombre}`,
+    label: esp.nombre,
   }))
 })
 
@@ -526,63 +527,54 @@ const handleLogout = async () => {
         />
       </div>
 
-      <!-- Barra de Filtros con Floating Inputs (Sin validación de requeridos) -->
-      <div class="bg-white rounded-2xl border border-borde p-4 sm:p-6 shadow-xs space-y-4">
-        <div class="flex flex-col lg:flex-row gap-4 justify-between items-stretch lg:items-center">
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 flex-1">
-            <!-- Búsqueda por código, nombre o raza -->
-            <FloatingInput
-              v-model="avesStore.filters.search"
-              label="Buscar"
-              @enter="handleSearch"
-            />
+      <!-- Barra de Filtros Reutilizable con FilterBar Component (SOLID) -->
+      <FilterBar
+        :loading="avesStore.loading"
+        @search="handleSearch"
+        @clear="handleClear"
+      >
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <!-- Búsqueda por código, nombre o raza con lupa -->
+          <FloatingInput
+            v-model="avesStore.filters.search"
+            label="Buscar"
+            placeholder="Código, nombre o raza..."
+            :icon="Search"
+            @enter="handleSearch"
+          />
 
-            <!-- Filtro Especie (Catálogo ctl_especie sin icono, vacío por defecto) -->
-            <FloatingSelect
-              v-model="avesStore.filters.id_especie"
-              label="Especie"
-              :options="especieFiltroOptions"
-            />
+          <!-- Filtro Especie (Catálogo ctl_especie sin icono, vacío por defecto) -->
+          <FloatingSelect
+            v-model="avesStore.filters.id_especie"
+            label="Especie"
+            :options="especieFiltroOptions"
+          />
 
-            <!-- Filtro Sexo (Catálogo ctl_sexo, vacío por defecto) -->
-            <FloatingSelect
-              v-model="avesStore.filters.id_sexo"
-              label="Sexo"
-              :options="sexoFiltroOptions"
-            />
+          <!-- Filtro Sexo (Catálogo ctl_sexo, vacío por defecto) -->
+          <FloatingSelect
+            v-model="avesStore.filters.id_sexo"
+            label="Sexo"
+            :options="sexoFiltroOptions"
+          />
 
-            <!-- Filtro Estado (Vacío inicialmente, sin 'Todos los estados') -->
-            <FloatingSelect
-              v-model="avesStore.filters.estado"
-              label="Estado del Ave"
-              :options="estadoFiltroOptions"
-            />
-          </div>
-
-          <!-- Botones de Acción de Filtro -->
-          <div class="flex items-center gap-2 justify-end self-end lg:self-center pt-2 lg:pt-0">
-            <button
-              @click="handleSearch"
-              class="px-5 py-2.5 btn-principal text-sm shadow-xs"
-            >
-              Buscar
-            </button>
-            <button
-              @click="handleClear"
-              class="px-5 py-2.5 btn-secundario text-sm"
-            >
-              Limpiar
-            </button>
-            <button
-              @click="openCreateAve"
-              class="px-5 py-2.5 btn-principal text-sm shadow-xs flex items-center gap-1.5 ml-1"
-            >
-              <Plus class="w-4 h-4" />
-              <span>Registrar ave</span>
-            </button>
-          </div>
+          <!-- Filtro Estado (Vacío inicialmente, sin 'Todos los estados') -->
+          <FloatingSelect
+            v-model="avesStore.filters.estado"
+            label="Estado del Ave"
+            :options="estadoFiltroOptions"
+          />
         </div>
-      </div>
+
+        <template #action>
+          <button
+            @click="openCreateAve"
+            class="px-5 py-2.5 btn-principal text-sm shadow-xs flex items-center gap-1.5 ml-1"
+          >
+            <Plus class="w-4 h-4" />
+            <span>Registrar ave</span>
+          </button>
+        </template>
+      </FilterBar>
 
       <!-- Tabla de Inventario de Aves -->
       <div class="bg-white rounded-2xl border border-borde shadow-xs overflow-hidden">

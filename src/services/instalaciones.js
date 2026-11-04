@@ -5,6 +5,11 @@ export const getCasitas = async (params = {}) => {
   return response.data
 }
 
+export const getTiposInstalacion = async () => {
+  const response = await api.get('/instalaciones/tipos')
+  return response.data.data
+}
+
 export const createCasita = async (payload) => {
   const response = await api.post('/casitas', payload)
   return response.data.data

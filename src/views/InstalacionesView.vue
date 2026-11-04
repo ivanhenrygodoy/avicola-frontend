@@ -15,6 +15,7 @@ import StatCard from '@/components/common/StatCard.vue'
 import FloatingInput from '@/components/common/FloatingInput.vue'
 import FloatingSelect from '@/components/common/FloatingSelect.vue'
 import FormField from '@/components/common/FormField.vue'
+import FilterBar from '@/components/common/FilterBar.vue'
 
 // Iconos
 import {
@@ -204,25 +205,34 @@ const divisionErrors = ref({
   nombre: '',
 })
 
-// Opciones de tipo de instalación
-const tipoOptions = [
-  { value: '', label: 'Todos los tipos' },
-  { value: 'Gallinero', label: 'Gallinero' },
-  { value: 'Mixto', label: 'Mixto' },
-  { value: 'Patos', label: 'Patos' },
-  { value: 'Crianza', label: 'Crianza' },
-  { value: 'Aislamiento', label: 'Aislamiento' },
-]
+// Opciones de tipo de instalación alimentadas desde catálogo ctl_tipo_instalacion
+const tipoOptions = computed(() => {
+  const options = [{ value: '', label: '' }]
+  store.tiposInstalacion.forEach((t) => {
+    options.push({ value: t.nombre, label: t.nombre })
+  })
+  return options
+})
 
-// Opciones de estado
+const formTipoOptions = computed(() => {
+  return store.tiposInstalacion.map((t) => ({
+    value: t.nombre,
+    label: t.nombre,
+  }))
+})
+
+// Opciones de estado (Vacío por defecto, sin 'Todos los estados')
 const estadoOptions = [
-  { value: '', label: 'Todos los estados' },
+  { value: '', label: '' },
   { value: 'true', label: 'Activa' },
   { value: 'false', label: 'Inactiva' },
 ]
 
 onMounted(async () => {
-  await store.fetchCasitas()
+  await Promise.all([
+    store.fetchTiposInstalacion(),
+    store.fetchCasitas(),
+  ])
 })
 
 // Acciones de Filtro
@@ -476,59 +486,47 @@ const handleLogout = async () => {
         />
       </div>
 
-      <!-- Barra de Filtros Reutilizable (FloatingInput & FloatingSelect - SOLID) -->
-      <div class="bg-white px-5 py-6 rounded-2xl border border-borde shadow-xs">
-        <div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
-          <!-- Campos de Filtro con etiquetas notch flotantes -->
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 flex-1">
-            <!-- Buscar -->
-            <FloatingInput
-              v-model="store.filters.buscar"
-              label="Buscar"
-              placeholder="Nombre o descripción..."
-              :icon="Search"
-              @enter="handleSearch"
-            />
+      <!-- Barra de Filtros Reutilizable con FilterBar Component (SOLID) -->
+      <FilterBar
+        :loading="store.loading"
+        @search="handleSearch"
+        @clear="handleClear"
+      >
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <!-- Buscar -->
+          <FloatingInput
+            v-model="store.filters.buscar"
+            label="Buscar"
+            placeholder="Nombre o descripción..."
+            :icon="Search"
+            @enter="handleSearch"
+          />
 
-            <!-- Tipo de Instalación -->
-            <FloatingSelect
-              v-model="store.filters.tipo"
-              label="Tipo de instalación"
-              :options="tipoOptions"
-            />
+          <!-- Tipo de Instalación -->
+          <FloatingSelect
+            v-model="store.filters.tipo"
+            label="Tipo de instalación"
+            :options="tipoOptions"
+          />
 
-            <!-- Estado -->
-            <FloatingSelect
-              v-model="store.filters.activa"
-              label="Estado"
-              :options="estadoOptions"
-            />
-          </div>
-
-          <!-- Botones de Acción de Filtro -->
-          <div class="flex items-center gap-2 justify-end self-end lg:self-center pt-2 lg:pt-0">
-            <button
-              @click="handleSearch"
-              class="px-5 py-2.5 btn-principal text-sm shadow-xs"
-            >
-              Buscar
-            </button>
-            <button
-              @click="handleClear"
-              class="px-5 py-2.5 btn-secundario text-sm"
-            >
-              Limpiar
-            </button>
-            <button
-              @click="openCreateCasita"
-              class="px-5 py-2.5 btn-principal text-sm shadow-xs flex items-center gap-1.5 ml-1"
-            >
-              <Plus class="w-4 h-4" />
-              <span>Nueva casita</span>
-            </button>
-          </div>
+          <!-- Estado -->
+          <FloatingSelect
+            v-model="store.filters.activa"
+            label="Estado"
+            :options="estadoOptions"
+          />
         </div>
-      </div>
+
+        <template #action>
+          <button
+            @click="openCreateCasita"
+            class="px-5 py-2.5 btn-principal text-sm shadow-xs flex items-center gap-1.5 ml-1"
+          >
+            <Plus class="w-4 h-4" />
+            <span>Nueva casita</span>
+          </button>
+        </template>
+      </FilterBar>
 
       <!-- Tabla de Listado -->
       <div class="bg-white rounded-2xl border border-borde shadow-xs overflow-hidden">
@@ -565,12 +563,9 @@ const handleLogout = async () => {
                 :key="casita.id"
                 class="hover:bg-crema/30 transition-colors"
               >
-                <!-- Nombre y Descripción -->
+                <!-- Nombre de Casita (Solo nombre, sin leyenda secundaria) -->
                 <td class="px-6 py-4">
                   <div class="font-bold text-verdoso">{{ casita.nombre }}</div>
-                  <div class="text-xs text-verdoso-muted truncate max-w-xs">
-                    {{ casita.descripcion || 'Sin descripción' }}
-                  </div>
                 </td>
 
                 <!-- Tipo -->
@@ -783,13 +778,7 @@ const handleLogout = async () => {
           v-model="casitaForm.tipo"
           type="select"
           label="Tipo de Instalación"
-          :options="[
-            { value: 'Gallinero', label: 'Gallinero' },
-            { value: 'Mixto', label: 'Mixto' },
-            { value: 'Patos', label: 'Patos' },
-            { value: 'Crianza', label: 'Crianza' },
-            { value: 'Aislamiento', label: 'Aislamiento' },
-          ]"
+          :options="formTipoOptions"
         />
 
         <FormField
