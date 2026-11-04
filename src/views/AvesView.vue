@@ -35,7 +35,6 @@ import {
   AlertTriangle,
   Calendar,
   Scale,
-  Sparkles,
 } from 'lucide-vue-next'
 
 const router = useRouter()
@@ -59,13 +58,13 @@ const actionLoaderMessage = ref('Procesando solicitud...')
 // Ave en proceso
 const targetAve = ref(null)
 
-// Formulario de Registro / Edición
+// Formulario de Registro / Edición (usa catálogos ctl_especie y ctl_sexo)
 const aveForm = ref({
   id: null,
   codigo: '',
   nombre: '',
-  especie: 'Gallina',
-  sexo: 'Hembra',
+  id_especie: '',
+  id_sexo: '',
   raza: 'Criolla',
   proposito: 'Postura',
   id_division: '',
@@ -78,8 +77,8 @@ const aveForm = ref({
 // Errores de validación reactivos para FormField
 const aveErrors = ref({
   codigo: '',
-  especie: '',
-  sexo: '',
+  id_especie: '',
+  id_sexo: '',
 })
 
 // Formulario de Traslado
@@ -95,25 +94,28 @@ const trasladoErrors = ref({
   id_division_destino: '',
 })
 
-// Opciones fijas de catálogos
-const especieOptions = [
-  { value: '', label: 'Todas las especies' },
-  { value: 'Gallina', label: 'Gallina / Gallo' },
-  { value: 'Chompipe', label: 'Chompipe (Pavo)' },
-  { value: 'Pato', label: 'Pato Pichiche' },
-]
+// Opciones dinámicas alimentadas desde ctl_especie y ctl_sexo
+const especieFiltroOptions = computed(() => {
+  const options = [{ value: '', label: 'Todas las especies' }]
+  avesStore.catalogos.especies.forEach((esp) => {
+    options.push({ value: String(esp.id), label: `${esp.icono || ''} ${esp.nombre}` })
+  })
+  return options
+})
 
-const formEspecieOptions = [
-  { value: 'Gallina', label: 'Gallina / Gallo' },
-  { value: 'Chompipe', label: 'Chompipe (Pavo)' },
-  { value: 'Pato', label: 'Pato Pichiche' },
-]
+const formEspecieOptions = computed(() => {
+  return avesStore.catalogos.especies.map((esp) => ({
+    value: esp.id,
+    label: `${esp.icono || ''} ${esp.nombre}`,
+  }))
+})
 
-const sexoOptions = [
-  { value: 'Hembra', label: 'Hembra' },
-  { value: 'Macho', label: 'Macho' },
-  { value: 'Desconocido', label: 'Desconocido' },
-]
+const formSexoOptions = computed(() => {
+  return avesStore.catalogos.sexos.map((s) => ({
+    value: s.id,
+    label: s.nombre,
+  }))
+})
 
 const propositoOptions = [
   { value: 'Postura', label: 'Postura (Huevos)' },
@@ -128,15 +130,6 @@ const estadoFiltroOptions = [
   { value: 'salida', label: 'Bajas / Salidas' },
   { value: 'todos', label: 'Todos los estados' },
 ]
-
-// Opciones de casitas y divisiones para filtros y selects
-const casitasFiltroOptions = computed(() => {
-  const options = [{ value: '', label: 'Todas las casitas' }]
-  instalacionesStore.casitas.forEach((c) => {
-    options.push({ value: String(c.id), label: c.nombre })
-  })
-  return options
-})
 
 // Divisiones agrupadas para el formulario de Ave
 const divisionesDisponibles = computed(() => {
@@ -177,9 +170,11 @@ const advertenciaBiologica = computed(() => {
   )
 
   if (avesEnDestino.length > 0) {
-    const especieExistente = avesEnDestino[0].especie
-    if (especieExistente.toLowerCase() !== targetAve.value.especie.toLowerCase()) {
-      return `¡Atención! La división destino alberga ${especieExistente}s. Las directrices biológicas prohíben mezclar ${targetAve.value.especie}s con ${especieExistente}s.`
+    const otraAve = avesEnDestino[0]
+    if (otraAve.id_especie !== targetAve.value.id_especie) {
+      const especieExistente = otraAve.especie?.nombre || 'otra especie'
+      const especieAve = targetAve.value.especie?.nombre || 'esta especie'
+      return `¡Atención! La división destino alberga ${especieExistente}s. Las directrices biológicas prohíben mezclar ${especieAve}s con ${especieExistente}s.`
     }
   }
   return null
@@ -187,6 +182,7 @@ const advertenciaBiologica = computed(() => {
 
 onMounted(async () => {
   await Promise.all([
+    avesStore.fetchCatalogos(),
     avesStore.fetchAves(),
     instalacionesStore.fetchCasitas({ per_page: 50 }),
   ])
@@ -214,13 +210,13 @@ const handlePerPageChange = async (perPage) => {
 const openCreateAve = () => {
   isEditing.value = false
   targetAve.value = null
-  aveErrors.value = { codigo: '', especie: '', sexo: '' }
+  aveErrors.value = { codigo: '', id_especie: '', id_sexo: '' }
   aveForm.value = {
     id: null,
     codigo: '',
     nombre: '',
-    especie: 'Gallina',
-    sexo: 'Hembra',
+    id_especie: avesStore.catalogos.especies[0]?.id || '',
+    id_sexo: avesStore.catalogos.sexos[0]?.id || '',
     raza: 'Criolla',
     proposito: 'Postura',
     id_division: '',
@@ -236,13 +232,13 @@ const openCreateAve = () => {
 const openEditAve = (ave) => {
   isEditing.value = true
   targetAve.value = ave
-  aveErrors.value = { codigo: '', especie: '', sexo: '' }
+  aveErrors.value = { codigo: '', id_especie: '', id_sexo: '' }
   aveForm.value = {
     id: ave.id,
     codigo: ave.codigo,
     nombre: ave.nombre || '',
-    especie: ave.especie,
-    sexo: ave.sexo,
+    id_especie: ave.id_especie || ave.especie?.id || '',
+    id_sexo: ave.id_sexo || ave.sexo?.id || '',
     raza: ave.raza || '',
     proposito: ave.proposito || 'Postura',
     id_division: ave.id_division || '',
@@ -256,19 +252,19 @@ const openEditAve = (ave) => {
 
 // Submit Crear / Editar Ave
 const handleSubmitAve = async () => {
-  aveErrors.value = { codigo: '', especie: '', sexo: '' }
+  aveErrors.value = { codigo: '', id_especie: '', id_sexo: '' }
   let hasError = false
 
   if (!aveForm.value.codigo || !aveForm.value.codigo.trim()) {
     aveErrors.value.codigo = 'El código identificador del ave es obligatorio'
     hasError = true
   }
-  if (!aveForm.value.especie) {
-    aveErrors.value.especie = 'La especie es obligatoria'
+  if (!aveForm.value.id_especie) {
+    aveErrors.value.id_especie = 'La especie es obligatoria'
     hasError = true
   }
-  if (!aveForm.value.sexo) {
-    aveErrors.value.sexo = 'El sexo es obligatorio'
+  if (!aveForm.value.id_sexo) {
+    aveErrors.value.id_sexo = 'El sexo es obligatorio'
     hasError = true
   }
 
@@ -285,6 +281,8 @@ const handleSubmitAve = async () => {
       ...aveForm.value,
       codigo: aveForm.value.codigo.trim(),
       nombre: aveForm.value.nombre?.trim() || null,
+      id_especie: Number(aveForm.value.id_especie),
+      id_sexo: Number(aveForm.value.id_sexo),
       id_division: aveForm.value.id_division ? Number(aveForm.value.id_division) : null,
       peso_actual_kg: aveForm.value.peso_actual_kg ? Number(aveForm.value.peso_actual_kg) : null,
     }
@@ -303,8 +301,8 @@ const handleSubmitAve = async () => {
     if (err.response?.status === 422) {
       if (err.response.data?.errors) {
         if (err.response.data.errors.codigo) aveErrors.value.codigo = err.response.data.errors.codigo[0]
-        if (err.response.data.errors.especie) aveErrors.value.especie = err.response.data.errors.especie[0]
-        if (err.response.data.errors.sexo) aveErrors.value.sexo = err.response.data.errors.sexo[0]
+        if (err.response.data.errors.id_especie) aveErrors.value.id_especie = err.response.data.errors.id_especie[0]
+        if (err.response.data.errors.id_sexo) aveErrors.value.id_sexo = err.response.data.errors.id_sexo[0]
       }
       notify.warning(msg)
     } else {
@@ -321,7 +319,6 @@ const openTraslado = (ave) => {
   targetAve.value = ave
   trasladoErrors.value = { id_division_destino: '' }
 
-  // Casita actual como default
   const casitaActualId = ave.division?.id_casita || ''
   trasladoForm.value = {
     id_casita_destino: casitaActualId ? String(casitaActualId) : '',
@@ -489,47 +486,27 @@ const handleLogout = async () => {
 
     <!-- Contenido Principal -->
     <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-      <!-- Tarjetas Métricas KPI Superiores -->
+      <!-- Tarjetas Métricas KPI Superiores (Sin rectángulos sombreados internos) -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="Total Población"
           :value="avesStore.stats.total_aves || 14"
-          subtitle="Aves en inventario general"
-        >
-          <template #icon>
-            <span class="text-xl">📊</span>
-          </template>
-        </StatCard>
+        />
 
         <StatCard
           title="Gallinas Criollas"
           :value="avesStore.stats.gallinas_count || 10"
-          subtitle="Ponedoras y gallos reproductores"
-        >
-          <template #icon>
-            <span class="text-xl">🐔</span>
-          </template>
-        </StatCard>
+        />
 
         <StatCard
           title="Chompipes (Pavos)"
           :value="avesStore.stats.chompipes_count || 2"
-          subtitle="Pareja reproductora autóctona"
-        >
-          <template #icon>
-            <span class="text-xl">🦃</span>
-          </template>
-        </StatCard>
+        />
 
         <StatCard
           title="Patos Pichiches"
           :value="avesStore.stats.patos_count || 2"
-          subtitle="Pareja ornamental en estanque"
-        >
-          <template #icon>
-            <span class="text-xl">🦆</span>
-          </template>
-        </StatCard>
+        />
       </div>
 
       <!-- Barra de Filtros con Floating Inputs (Sin validación de requeridos) -->
@@ -543,11 +520,11 @@ const handleLogout = async () => {
               @enter="handleSearch"
             />
 
-            <!-- Filtro Especie -->
+            <!-- Filtro Especie (Catálogo ctl_especie) -->
             <FloatingSelect
-              v-model="avesStore.filters.especie"
+              v-model="avesStore.filters.id_especie"
               label="Especie"
-              :options="especieOptions"
+              :options="especieFiltroOptions"
             />
 
             <!-- Filtro Estado -->
@@ -621,10 +598,7 @@ const handleLogout = async () => {
                 <td class="px-6 py-4">
                   <div class="flex items-center gap-3">
                     <div class="w-10 h-10 rounded-xl bg-crema border border-borde flex items-center justify-center font-bold text-base text-bosque shadow-2xs">
-                      <span v-if="ave.especie === 'Gallina'">🐔</span>
-                      <span v-else-if="ave.especie === 'Chompipe'">🦃</span>
-                      <span v-else-if="ave.especie === 'Pato'">🦆</span>
-                      <span v-else>🐦</span>
+                      <span>{{ ave.especie?.icono || '🐔' }}</span>
                     </div>
                     <div>
                       <p class="font-bold text-verdoso leading-snug">
@@ -637,23 +611,23 @@ const handleLogout = async () => {
                   </div>
                 </td>
 
-                <!-- Especie y Sexo -->
+                <!-- Especie y Sexo (Catálogos ctl_especie y ctl_sexo) -->
                 <td class="px-6 py-4">
                   <div class="space-y-1">
                     <span
                       :class="[
                         'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold',
-                        ave.especie === 'Gallina'
+                        ave.especie?.nombre === 'Gallina'
                           ? 'bg-[#DDF3E3] text-bosque'
-                          : ave.especie === 'Chompipe'
+                          : ave.especie?.nombre === 'Chompipe'
                           ? 'bg-[#FFF1CC] text-amber-800'
                           : 'bg-sky-100 text-sky-800'
                       ]"
                     >
-                      {{ ave.especie }}
+                      {{ ave.especie?.nombre || 'Especie' }}
                     </span>
                     <p class="text-xs text-verdoso-muted">
-                      {{ ave.sexo }}
+                      {{ ave.sexo?.nombre || 'Desconocido' }}
                     </p>
                   </div>
                 </td>
@@ -761,7 +735,7 @@ const handleLogout = async () => {
       </div>
     </main>
 
-    <!-- MODAL 1: Registrar / Editar Ave (Usa FormField.vue con validaciones estándar) -->
+    <!-- MODAL 1: Registrar / Editar Ave (Usa FormField.vue con catálogos ctl_especie y ctl_sexo) -->
     <BaseModal
       :is-open="showAveModal"
       :title="isEditing ? `Editar Ave: ${aveForm.codigo}` : 'Registrar Nueva Ave'"
@@ -791,28 +765,28 @@ const handleLogout = async () => {
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <!-- Especie -->
+          <!-- Especie (Catálogo ctl_especie) -->
           <FormField
             id="ave-especie"
-            v-model="aveForm.especie"
+            v-model="aveForm.id_especie"
             type="select"
             label="Especie"
             required
             :options="formEspecieOptions"
-            :error="aveErrors.especie"
-            @input="aveErrors.especie = ''"
+            :error="aveErrors.id_especie"
+            @input="aveErrors.id_especie = ''"
           />
 
-          <!-- Sexo -->
+          <!-- Sexo (Catálogo ctl_sexo) -->
           <FormField
             id="ave-sexo"
-            v-model="aveForm.sexo"
+            v-model="aveForm.id_sexo"
             type="select"
             label="Sexo"
             required
-            :options="sexoOptions"
-            :error="aveErrors.sexo"
-            @input="aveErrors.sexo = ''"
+            :options="formSexoOptions"
+            :error="aveErrors.id_sexo"
+            @input="aveErrors.id_sexo = ''"
           />
 
           <!-- Raza -->
@@ -901,7 +875,7 @@ const handleLogout = async () => {
     <!-- MODAL 2: Trasladar Ave (Separación Biológica) -->
     <BaseModal
       :is-open="showTrasladoModal"
-      :title="`Traslado de Ave: ${targetAve?.codigo} (${targetAve?.especie})`"
+      :title="`Traslado de Ave: ${targetAve?.codigo} (${targetAve?.especie?.nombre || 'Ave'})`"
       max-width="md"
       @close="showTrasladoModal = false"
     >
@@ -1027,7 +1001,7 @@ const handleLogout = async () => {
     <!-- MODAL 3: Historial Cronológico de Movimientos (Ojito 👁️) -->
     <BaseModal
       :is-open="showMovimientosModal"
-      :title="`Historial de Traslados: ${targetAve?.codigo} (${targetAve?.nombre || 'Ave'})`"
+      :title="`Historial de Traslados: ${targetAve?.codigo} (${targetAve?.nombre || targetAve?.especie?.nombre || 'Ave'})`"
       max-width="lg"
       @close="showMovimientosModal = false"
     >
@@ -1088,7 +1062,7 @@ const handleLogout = async () => {
     <BaseConfirmModal
       :is-open="showDeleteModal"
       title="¿Dar de baja a esta ave?"
-      :message="`¿Estás seguro de registrar la salida de ${targetAve?.codigo} (${targetAve?.nombre || targetAve?.especie})? Se conservará su historial cronológico de movimientos.`"
+      :message="`¿Estás seguro de registrar la salida de ${targetAve?.codigo} (${targetAve?.nombre || targetAve?.especie?.nombre})? Se conservará su historial cronológico de movimientos.`"
       confirm-text="Confirmar Baja"
       cancel-text="Cancelar"
       :is-loading="isSubmitting"

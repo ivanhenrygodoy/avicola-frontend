@@ -462,25 +462,16 @@ const handleLogout = async () => {
         <StatCard
           title="Total Casitas"
           :value="store.stats.total_casitas"
-          :icon="Building"
-          icon-bg-class="bg-[#F5F3EA]"
-          icon-color-class="text-salvia"
         />
 
         <StatCard
           title="Total Divisiones"
           :value="store.stats.total_divisiones"
-          :icon="Layers"
-          icon-bg-class="bg-[#F5F3EA]"
-          icon-color-class="text-salvia"
         />
 
         <StatCard
           title="Divisiones Habilitadas"
           :value="store.stats.divisiones_activas"
-          :icon="CheckCircle2"
-          icon-bg-class="bg-[#DDF3E3]"
-          icon-color-class="text-bosque"
           value-color-class="text-bosque"
         />
       </div>

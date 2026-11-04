@@ -4,6 +4,10 @@ import * as avesService from '@/services/aves'
 export const useAvesStore = defineStore('aves', {
   state: () => ({
     aves: [],
+    catalogos: {
+      especies: [],
+      sexos: [],
+    },
     meta: {
       current_page: 1,
       last_page: 1,
@@ -21,8 +25,8 @@ export const useAvesStore = defineStore('aves', {
     },
     filters: {
       search: '',
-      especie: '',
-      sexo: '',
+      id_especie: '',
+      id_sexo: '',
       estado: 'activa',
       id_casita: '',
       id_division: '',
@@ -37,6 +41,18 @@ export const useAvesStore = defineStore('aves', {
   }),
 
   actions: {
+    async fetchCatalogos() {
+      try {
+        const data = await avesService.getCatalogosAves()
+        if (data) {
+          this.catalogos.especies = data.especies || []
+          this.catalogos.sexos = data.sexos || []
+        }
+      } catch (err) {
+        console.error('Error al cargar catálogos de aves:', err)
+      }
+    },
+
     async fetchAves(overrideParams = {}) {
       this.loading = true
       this.error = null
@@ -87,8 +103,8 @@ export const useAvesStore = defineStore('aves', {
 
     resetFilters() {
       this.filters.search = ''
-      this.filters.especie = ''
-      this.filters.sexo = ''
+      this.filters.id_especie = ''
+      this.filters.id_sexo = ''
       this.filters.estado = 'activa'
       this.filters.id_casita = ''
       this.filters.id_division = ''

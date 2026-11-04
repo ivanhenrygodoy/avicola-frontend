@@ -5,6 +5,11 @@ export const getAves = async (params = {}) => {
   return response.data
 }
 
+export const getCatalogosAves = async () => {
+  const response = await api.get('/aves/catalogos')
+  return response.data.data
+}
+
 export const getAve = async (id) => {
   const response = await api.get(`/aves/${id}`)
   return response.data.data
@@ -34,3 +39,4 @@ export const getMovimientosAve = async (id) => {
   const response = await api.get(`/aves/${id}/movimientos`)
   return response.data.data
 }
+
