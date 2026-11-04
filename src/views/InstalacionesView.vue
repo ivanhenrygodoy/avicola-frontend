@@ -14,6 +14,7 @@ import PaginationBar from '@/components/common/PaginationBar.vue'
 import StatCard from '@/components/common/StatCard.vue'
 import FloatingInput from '@/components/common/FloatingInput.vue'
 import FloatingSelect from '@/components/common/FloatingSelect.vue'
+import FormField from '@/components/common/FormField.vue'
 
 // Iconos
 import {
@@ -189,10 +190,18 @@ const casitaForm = ref({
   descripcion: '',
 })
 
+const casitaErrors = ref({
+  nombre: '',
+})
+
 const divisionForm = ref({
   id_casita: null,
   nombre: '',
   descripcion: '',
+})
+
+const divisionErrors = ref({
+  nombre: '',
 })
 
 // Opciones de tipo de instalación
@@ -244,6 +253,7 @@ const handleViewDetail = (casita) => {
 // Crear / Editar Casita
 const openCreateCasita = () => {
   isEditingCasita.value = false
+  casitaErrors.value = { nombre: '' }
   casitaForm.value = {
     id: null,
     id_granja: 1,
@@ -256,6 +266,7 @@ const openCreateCasita = () => {
 
 const openEditCasita = (casita) => {
   isEditingCasita.value = true
+  casitaErrors.value = { nombre: '' }
   casitaForm.value = {
     id: casita.id,
     id_granja: casita.id_granja || 1,
@@ -267,8 +278,9 @@ const openEditCasita = (casita) => {
 }
 
 const handleSubmitCasita = async () => {
-  if (!casitaForm.value.nombre?.trim()) {
-    notify.warning('El nombre de la casita es obligatorio.')
+  casitaErrors.value.nombre = ''
+  if (!casitaForm.value.nombre || !casitaForm.value.nombre.trim()) {
+    casitaErrors.value.nombre = 'El nombre de la casita es obligatorio'
     return
   }
 
@@ -298,6 +310,9 @@ const handleSubmitCasita = async () => {
     console.error('Error al guardar la casita:', err)
     const msg = err.response?.data?.message || 'Error al guardar la casita.'
     if (err.response?.status === 422) {
+      if (err.response?.data?.errors?.nombre) {
+        casitaErrors.value.nombre = err.response.data.errors.nombre[0]
+      }
       notify.warning(msg)
     } else {
       notify.error(msg)
@@ -310,6 +325,7 @@ const handleSubmitCasita = async () => {
 
 // Agregar Corral / División
 const openAddDivision = (idCasita) => {
+  divisionErrors.value = { nombre: '' }
   divisionForm.value = {
     id_casita: idCasita,
     nombre: '',
@@ -319,8 +335,9 @@ const openAddDivision = (idCasita) => {
 }
 
 const handleSubmitDivision = async () => {
-  if (!divisionForm.value.nombre?.trim()) {
-    notify.warning('El nombre del corral es obligatorio.')
+  divisionErrors.value.nombre = ''
+  if (!divisionForm.value.nombre || !divisionForm.value.nombre.trim()) {
+    divisionErrors.value.nombre = 'El nombre del corral es obligatorio'
     return
   }
 
@@ -340,6 +357,9 @@ const handleSubmitDivision = async () => {
     console.error('Error al guardar corral:', err)
     const msg = err.response?.data?.message || 'Error al guardar el corral.'
     if (err.response?.status === 422) {
+      if (err.response?.data?.errors?.nombre) {
+        divisionErrors.value.nombre = err.response.data.errors.nombre[0]
+      }
       notify.warning(msg)
     } else {
       notify.error(msg)
@@ -750,41 +770,39 @@ const handleLogout = async () => {
       max-width="md"
       @close="showCasitaModal = false"
     >
-      <form id="casita-form" @submit.prevent="handleSubmitCasita" class="space-y-4">
-        <div>
-          <label class="block text-xs font-semibold text-verdoso uppercase tracking-wider mb-1">Nombre</label>
-          <input
-            v-model="casitaForm.nombre"
-            type="text"
-            required
-            placeholder="Ej. Casita 4"
-            class="w-full px-3.5 py-2.5 border border-borde rounded-xl text-sm focus:ring-1 focus:ring-bosque focus:border-bosque outline-none text-verdoso bg-white"
-          />
-        </div>
+      <form id="casita-form" @submit.prevent="handleSubmitCasita" class="space-y-4" novalidate>
+        <FormField
+          id="casita-nombre"
+          v-model="casitaForm.nombre"
+          label="Nombre de la Casita"
+          placeholder="Ej. Casita 4"
+          required
+          :error="casitaErrors.nombre"
+          @input="casitaErrors.nombre = ''"
+        />
 
-        <div>
-          <label class="block text-xs font-semibold text-verdoso uppercase tracking-wider mb-1">Tipo de Instalación</label>
-          <select
-            v-model="casitaForm.tipo"
-            class="w-full px-3.5 py-2.5 border border-borde rounded-xl text-sm focus:ring-1 focus:ring-bosque focus:border-bosque outline-none bg-white text-verdoso cursor-pointer"
-          >
-            <option value="Gallinero">Gallinero</option>
-            <option value="Mixto">Mixto</option>
-            <option value="Patos">Patos</option>
-            <option value="Crianza">Crianza</option>
-            <option value="Aislamiento">Aislamiento</option>
-          </select>
-        </div>
+        <FormField
+          id="casita-tipo"
+          v-model="casitaForm.tipo"
+          type="select"
+          label="Tipo de Instalación"
+          :options="[
+            { value: 'Gallinero', label: 'Gallinero' },
+            { value: 'Mixto', label: 'Mixto' },
+            { value: 'Patos', label: 'Patos' },
+            { value: 'Crianza', label: 'Crianza' },
+            { value: 'Aislamiento', label: 'Aislamiento' },
+          ]"
+        />
 
-        <div>
-          <label class="block text-xs font-semibold text-verdoso uppercase tracking-wider mb-1">Descripción</label>
-          <textarea
-            v-model="casitaForm.descripcion"
-            rows="3"
-            placeholder="Detalles constructivos, ubicación física..."
-            class="w-full px-3.5 py-2.5 border border-borde rounded-xl text-sm focus:ring-1 focus:ring-bosque focus:border-bosque outline-none text-verdoso bg-white"
-          ></textarea>
-        </div>
+        <FormField
+          id="casita-descripcion"
+          v-model="casitaForm.descripcion"
+          type="textarea"
+          label="Descripción"
+          placeholder="Detalles constructivos, ubicación física..."
+          :rows="3"
+        />
       </form>
 
       <!-- Botones del modal CENTRADOS (SOLID) -->
@@ -817,27 +835,25 @@ const handleLogout = async () => {
       max-width="md"
       @close="showDivisionModal = false"
     >
-      <form id="division-form" @submit.prevent="handleSubmitDivision" class="space-y-4">
-        <div>
-          <label class="block text-xs font-semibold text-verdoso uppercase tracking-wider mb-1">Nombre del Corral</label>
-          <input
-            v-model="divisionForm.nombre"
-            type="text"
-            required
-            placeholder="Ej. División 3 o Espacio Cuarentena"
-            class="w-full px-3.5 py-2.5 border border-borde rounded-xl text-sm focus:ring-1 focus:ring-bosque focus:border-bosque outline-none text-verdoso bg-white"
-          />
-        </div>
+      <form id="division-form" @submit.prevent="handleSubmitDivision" class="space-y-4" novalidate>
+        <FormField
+          id="division-nombre"
+          v-model="divisionForm.nombre"
+          label="Nombre del Corral"
+          placeholder="Ej. División 3 o Espacio Cuarentena"
+          required
+          :error="divisionErrors.nombre"
+          @input="divisionErrors.nombre = ''"
+        />
 
-        <div>
-          <label class="block text-xs font-semibold text-verdoso uppercase tracking-wider mb-1">Descripción</label>
-          <textarea
-            v-model="divisionForm.descripcion"
-            rows="3"
-            placeholder="Especies admitidas, condiciones físicas..."
-            class="w-full px-3.5 py-2.5 border border-borde rounded-xl text-sm focus:ring-1 focus:ring-bosque focus:border-bosque outline-none text-verdoso bg-white"
-          ></textarea>
-        </div>
+        <FormField
+          id="division-descripcion"
+          v-model="divisionForm.descripcion"
+          type="textarea"
+          label="Descripción"
+          placeholder="Especies admitidas, condiciones físicas..."
+          :rows="3"
+        />
       </form>
 
       <!-- Botones del modal CENTRADOS (SOLID) -->

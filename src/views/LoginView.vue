@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import FormField from '@/components/common/FormField.vue'
 import { ShieldCheck, LogIn, Lock, Mail, AlertCircle, Loader2 } from 'lucide-vue-next'
 
 const router = useRouter()
@@ -10,15 +11,30 @@ const authStore = useAuthStore()
 const email = ref('')
 const password = ref('')
 const localError = ref('')
+const errors = ref({
+  email: '',
+  password: '',
+})
 
 const handleLogin = async () => {
   localError.value = ''
-  if (!email.value || !password.value) {
-    localError.value = 'Por favor ingresa tu correo y contraseña.'
+  errors.value = { email: '', password: '' }
+
+  let hasError = false
+  if (!email.value || !email.value.trim()) {
+    errors.value.email = 'El correo electrónico es obligatorio'
+    hasError = true
+  }
+  if (!password.value || !password.value.trim()) {
+    errors.value.password = 'La contraseña es obligatoria'
+    hasError = true
+  }
+
+  if (hasError) {
     return
   }
 
-  const result = await authStore.login(email.value, password.value)
+  const result = await authStore.login(email.value.trim(), password.value)
   if (result.success) {
     router.push({ name: 'dashboard' })
   } else {
@@ -42,53 +58,43 @@ const handleLogin = async () => {
         </p>
       </div>
 
-      <!-- Alerta de Error -->
+      <!-- Alerta de Error de Autenticación -->
       <div v-if="localError || authStore.error" class="p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm flex items-start gap-3 animate-fade-in">
         <AlertCircle class="w-5 h-5 flex-shrink-0 mt-0.5" />
         <span>{{ localError || authStore.error }}</span>
       </div>
 
-      <form class="mt-8 space-y-6" @submit.prevent="handleLogin">
+      <form class="mt-8 space-y-6" @submit.prevent="handleLogin" novalidate>
         <div class="space-y-4">
-          <div>
-            <label for="email" class="block text-xs font-bold text-verdoso uppercase tracking-wider mb-1">
-              Correo Electrónico
-            </label>
-            <div class="relative rounded-xl shadow-2xs">
-              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-salvia">
-                <Mail class="w-5 h-5" />
-              </div>
-              <input
-                id="email"
-                v-model="email"
-                type="email"
-                autocomplete="email"
-                required
-                class="block w-full pl-10 pr-3 py-2.5 border border-borde rounded-xl text-verdoso placeholder-verdoso-muted focus:outline-none focus:ring-1 focus:ring-bosque focus:border-bosque sm:text-sm transition-colors"
-                placeholder="admin@granja.local"
-              />
-            </div>
-          </div>
+          <!-- Campo Correo Electrónico con validación -->
+          <FormField
+            id="email"
+            v-model="email"
+            label="Correo Electrónico"
+            type="email"
+            placeholder="admin@granja.local"
+            :error="errors.email"
+            @input="errors.email = ''"
+          >
+            <template #prefix>
+              <Mail class="w-5 h-5" />
+            </template>
+          </FormField>
 
-          <div>
-            <label for="password" class="block text-xs font-bold text-verdoso uppercase tracking-wider mb-1">
-              Contraseña
-            </label>
-            <div class="relative rounded-xl shadow-2xs">
-              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-salvia">
-                <Lock class="w-5 h-5" />
-              </div>
-              <input
-                id="password"
-                v-model="password"
-                type="password"
-                autocomplete="current-password"
-                required
-                class="block w-full pl-10 pr-3 py-2.5 border border-borde rounded-xl text-verdoso placeholder-verdoso-muted focus:outline-none focus:ring-1 focus:ring-bosque focus:border-bosque sm:text-sm transition-colors"
-                placeholder="••••••••"
-              />
-            </div>
-          </div>
+          <!-- Campo Contraseña con validación -->
+          <FormField
+            id="password"
+            v-model="password"
+            label="Contraseña"
+            type="password"
+            placeholder="••••••••"
+            :error="errors.password"
+            @input="errors.password = ''"
+          >
+            <template #prefix>
+              <Lock class="w-5 h-5" />
+            </template>
+          </FormField>
         </div>
 
         <div>

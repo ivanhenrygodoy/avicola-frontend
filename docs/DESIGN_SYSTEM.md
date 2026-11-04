@@ -24,7 +24,13 @@ Guía rápida de componentes globales y tokens corporativos implementados en el 
 6. **`ActionLoader.vue`**: Overlay corporativo con spinner bicolor animado (`#244B36` y `#6F9678`) mostrado durante peticiones asíncronas.
 7. **`PaginationBar.vue`**: Paginación modular con selector de elementos por página y páginas activas corporativas.
 8. **`StatCard.vue`**: Tarjetas métricas superiores KPI.
-9. **`FloatingInput.vue` / `FloatingSelect.vue`**: Entradas con etiqueta flotante sobre el borde (notch) con fondo blanco sólido que enmascara la línea.
+9. **`FloatingInput.vue` / `FloatingSelect.vue`**: Entradas para barras de filtros con etiqueta flotante sobre el borde (notch) con fondo blanco sólido que enmascara la línea. No aplican validación de campo requerido.
+10. **`FormField.vue`**: Componente estándar universal para campos de formularios (Login, Modales de creación y edición, formularios de captura).
+    - Etiqueta estándar sobre el campo (sin muesca flotante/notch).
+    - Validación de inexistencia de texto / requerido: Borde rojo `border-2 border-red-500` y etiqueta roja en caso de error.
+    - Mensaje de validación en texto rojo legible (`text-xs text-red-500 font-medium mt-1`) inmediatamente debajo del campo.
+    - Limpieza reactiva inmediata del mensaje de error tan pronto el usuario introduce texto (`@input`).
+    - Soporte multi-modo: `type="text"`, `"email"`, `"password"`, `"number"`, `"textarea"` y `"select"`.
 
 ## Estándar de Notificaciones
 - **422 (Excepciones de Negocio / Validación):** `notify.warning(msg)` (Amarillo suave `#FFF1CC`).
