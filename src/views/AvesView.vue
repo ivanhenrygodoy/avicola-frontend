@@ -534,11 +534,10 @@ const handleLogout = async () => {
         @clear="handleClear"
       >
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <!-- Búsqueda por código, nombre o raza con lupa -->
+          <!-- Búsqueda por código, nombre o raza con lupa (en blanco) -->
           <FloatingInput
             v-model="avesStore.filters.search"
             label="Buscar"
-            placeholder="Código, nombre o raza..."
             :icon="Search"
             @enter="handleSearch"
           />

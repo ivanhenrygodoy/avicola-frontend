@@ -493,11 +493,10 @@ const handleLogout = async () => {
         @clear="handleClear"
       >
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <!-- Buscar -->
+          <!-- Buscar (configurable con prop placeholder, en blanco por defecto) -->
           <FloatingInput
             v-model="store.filters.buscar"
             label="Buscar"
-            placeholder="Nombre o descripción..."
             :icon="Search"
             @enter="handleSearch"
           />
