@@ -24,6 +24,7 @@ import {
   Plus,
   Search,
   Eye,
+  History,
   Pencil,
   Trash2,
   ArrowRightLeft,
@@ -45,6 +46,7 @@ const notify = useNotificationStore()
 
 // Modales
 const showAveModal = ref(false)
+const showDetalleModal = ref(false)
 const showTrasladoModal = ref(false)
 const showMovimientosModal = ref(false)
 const showDeleteModal = ref(false)
@@ -377,6 +379,12 @@ const handleSubmitTraslado = async () => {
   }
 }
 
+// Modal Detalle Completo del Ave (Sólo Lectura - El Ojito 👁️)
+const openDetalle = (ave) => {
+  targetAve.value = ave
+  showDetalleModal.value = true
+}
+
 // Modal Ver Historial de Movimientos
 const openMovimientos = async (ave) => {
   targetAve.value = ave
@@ -574,13 +582,11 @@ const handleLogout = async () => {
             <thead class="bg-crema/60 border-b border-borde text-verdoso font-bold text-xs uppercase tracking-wider">
               <tr>
                 <th scope="col" class="px-6 py-4">Ave</th>
-                <th scope="col" class="px-6 py-4">Identificador</th>
                 <th scope="col" class="px-6 py-4">Especie</th>
                 <th scope="col" class="px-6 py-4">Sexo</th>
                 <th scope="col" class="px-6 py-4">Raza</th>
                 <th scope="col" class="px-6 py-4">Propósito</th>
                 <th scope="col" class="px-6 py-4">Ubicación</th>
-                <th scope="col" class="px-6 py-4">Peso</th>
                 <th scope="col" class="px-6 py-4">Estado</th>
                 <th scope="col" class="px-6 py-4 text-right">Acciones</th>
               </tr>
@@ -588,7 +594,7 @@ const handleLogout = async () => {
 
             <tbody class="divide-y divide-borde">
               <tr v-if="avesStore.aves.length === 0">
-                <td colspan="10" class="px-6 py-12 text-center text-verdoso-muted">
+                <td colspan="8" class="px-6 py-12 text-center text-verdoso-muted">
                   No se encontraron aves con los criterios de búsqueda seleccionados.
                 </td>
               </tr>
@@ -601,11 +607,6 @@ const handleLogout = async () => {
                 <!-- Ave / Nombre -->
                 <td class="px-6 py-4 font-bold text-verdoso">
                   {{ ave.nombre ? `"${ave.nombre}"` : '—' }}
-                </td>
-
-                <!-- Identificador / Código -->
-                <td class="px-6 py-4 font-mono text-sm text-verdoso">
-                  {{ ave.codigo }}
                 </td>
 
                 <!-- Especie (Solo texto plano) -->
@@ -633,11 +634,6 @@ const handleLogout = async () => {
                   {{ ave.division?.casita?.nombre || 'Sin asignar' }}
                 </td>
 
-                <!-- Peso -->
-                <td class="px-6 py-4 text-sm font-mono text-verdoso">
-                  {{ ave.peso_actual_kg ? `${ave.peso_actual_kg} kg` : '—' }}
-                </td>
-
                 <!-- Estado (Único con pill de color) -->
                 <td class="px-6 py-4">
                   <span
@@ -652,16 +648,25 @@ const handleLogout = async () => {
                   </span>
                 </td>
 
-                <!-- Acciones (Ojito 👁️, Trasladar 🚚, Lápiz ✏️, Basura 🗑️) -->
+                <!-- Acciones (Detalle 👁️, Historial 🕒, Trasladar ⇄, Lápiz ✏️, Basura 🗑️) -->
                 <td class="px-6 py-4 text-right">
                   <div class="flex items-center justify-end gap-1.5 text-salvia">
-                    <!-- Ojito: Ver Historial de Movimientos -->
+                    <!-- Ojito: Ver Detalle Completo del Ave (Lectura) -->
+                    <button
+                      @click="openDetalle(ave)"
+                      class="p-1.5 hover:text-bosque hover:bg-salvia-50 rounded-lg transition-colors cursor-pointer"
+                      title="Ver detalle completo del ave"
+                    >
+                      <Eye class="w-4 h-4" />
+                    </button>
+
+                    <!-- Historial: Ver Historial de Movimientos y Traslados -->
                     <button
                       @click="openMovimientos(ave)"
                       class="p-1.5 hover:text-bosque hover:bg-salvia-50 rounded-lg transition-colors cursor-pointer"
                       title="Ver historial de traslados"
                     >
-                      <Eye class="w-4 h-4" />
+                      <History class="w-4 h-4" />
                     </button>
 
                     <!-- Trasladar Ave (Separación Biológica) -->
@@ -710,6 +715,119 @@ const handleLogout = async () => {
         />
       </div>
     </main>
+
+    <!-- MODAL 0: Ficha Técnica Detallada del Ave (Sólo Lectura - Ojito 👁️) -->
+    <BaseModal
+      :is-open="showDetalleModal && !!targetAve"
+      max-width="lg"
+      @close="showDetalleModal = false"
+    >
+      <template #header>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-salvia/20 text-bosque">
+              {{ targetAve?.especie?.nombre || 'Ave' }}
+            </span>
+            <span
+              :class="[
+                'px-2 py-0.5 rounded-full text-xs font-semibold',
+                targetAve?.estado === 'activa' ? 'bg-[#DDF3E3] text-bosque' : 'bg-[#FEE2E2] text-red-800'
+              ]"
+            >
+              {{ targetAve?.estado === 'activa' ? 'Activa' : 'Baja / Salida' }}
+            </span>
+          </div>
+          <h3 class="text-xl font-bold text-verdoso mt-1">
+            {{ targetAve?.nombre ? `"${targetAve?.nombre}"` : targetAve?.codigo }}
+          </h3>
+          <p class="text-xs text-verdoso-muted font-mono mt-0.5">
+            Código Identificador: <span class="font-bold text-verdoso">{{ targetAve?.codigo }}</span>
+          </p>
+        </div>
+      </template>
+
+      <!-- Ficha Técnica en Grid de Solo Lectura -->
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <!-- Especie -->
+          <div class="p-3 bg-crema/40 border border-borde rounded-xl">
+            <span class="text-[11px] font-bold text-salvia uppercase tracking-wider block">Especie</span>
+            <span class="text-sm font-semibold text-verdoso mt-0.5 block">
+              {{ targetAve?.especie?.nombre || '—' }}
+            </span>
+          </div>
+
+          <!-- Sexo -->
+          <div class="p-3 bg-crema/40 border border-borde rounded-xl">
+            <span class="text-[11px] font-bold text-salvia uppercase tracking-wider block">Sexo</span>
+            <span class="text-sm font-semibold text-verdoso mt-0.5 block">
+              {{ targetAve?.sexo?.nombre || '—' }}
+            </span>
+          </div>
+
+          <!-- Raza -->
+          <div class="p-3 bg-crema/40 border border-borde rounded-xl">
+            <span class="text-[11px] font-bold text-salvia uppercase tracking-wider block">Raza</span>
+            <span class="text-sm font-semibold text-verdoso mt-0.5 block">
+              {{ targetAve?.raza || 'Criolla' }}
+            </span>
+          </div>
+
+          <!-- Propósito -->
+          <div class="p-3 bg-crema/40 border border-borde rounded-xl">
+            <span class="text-[11px] font-bold text-salvia uppercase tracking-wider block">Propósito</span>
+            <span class="text-sm font-semibold text-verdoso mt-0.5 block">
+              {{ targetAve?.proposito?.nombre || '—' }}
+            </span>
+          </div>
+
+          <!-- Peso Actual -->
+          <div class="p-3 bg-crema/40 border border-borde rounded-xl">
+            <span class="text-[11px] font-bold text-salvia uppercase tracking-wider block">Peso Actual</span>
+            <span class="text-sm font-semibold text-verdoso mt-0.5 block">
+              {{ targetAve?.peso_actual_kg ? `${targetAve.peso_actual_kg} kg` : 'No registrado' }}
+            </span>
+          </div>
+
+          <!-- Fecha de Ingreso -->
+          <div class="p-3 bg-crema/40 border border-borde rounded-xl">
+            <span class="text-[11px] font-bold text-salvia uppercase tracking-wider block">Fecha de Ingreso</span>
+            <span class="text-sm font-semibold text-verdoso mt-0.5 block">
+              {{ formatDate(targetAve?.fecha_ingreso) }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Ubicación Física Actual (Casita y Corral) -->
+        <div class="p-4 bg-crema/40 border border-borde rounded-xl space-y-1">
+          <span class="text-[11px] font-bold text-salvia uppercase tracking-wider block">Ubicación Física Actual</span>
+          <div class="flex items-center gap-2 text-sm text-verdoso font-semibold">
+            <span>{{ targetAve?.division?.casita?.nombre || 'Sin casita asignada' }}</span>
+            <span v-if="targetAve?.division">•</span>
+            <span v-if="targetAve?.division" class="text-salvia font-normal">{{ targetAve.division.nombre }}</span>
+          </div>
+        </div>
+
+        <!-- Observaciones -->
+        <div v-if="targetAve?.observaciones" class="p-4 bg-crema/40 border border-borde rounded-xl space-y-1">
+          <span class="text-[11px] font-bold text-salvia uppercase tracking-wider block">Observaciones y Rasgos</span>
+          <p class="text-xs text-verdoso leading-relaxed whitespace-pre-line">
+            {{ targetAve.observaciones }}
+          </p>
+        </div>
+      </div>
+
+      <!-- Footer CENTRADO -->
+      <template #footer>
+        <button
+          type="button"
+          @click="showDetalleModal = false"
+          class="px-6 py-2 btn-secundario text-sm"
+        >
+          Cerrar
+        </button>
+      </template>
+    </BaseModal>
 
     <!-- MODAL 1: Registrar / Editar Ave (Usa FormField.vue con catálogos ctl_especie y ctl_sexo) -->
     <BaseModal
