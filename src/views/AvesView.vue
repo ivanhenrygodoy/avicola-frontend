@@ -58,15 +58,15 @@ const actionLoaderMessage = ref('Procesando solicitud...')
 // Ave en proceso
 const targetAve = ref(null)
 
-// Formulario de Registro / Edición (usa catálogos ctl_especie y ctl_sexo)
+// Formulario de Registro / Edición (usa catálogos ctl_especie, ctl_sexo, ctl_proposito)
 const aveForm = ref({
   id: null,
   codigo: '',
   nombre: '',
   id_especie: '',
   id_sexo: '',
+  id_proposito: '',
   raza: 'Criolla',
-  proposito: 'Postura',
   id_division: '',
   fecha_ingreso: new Date().toISOString().split('T')[0],
   fecha_nacimiento: '',
@@ -117,13 +117,13 @@ const formSexoOptions = computed(() => {
   }))
 })
 
-const propositoOptions = [
-  { value: 'Postura', label: 'Postura (Huevos)' },
-  { value: 'Reproducción', label: 'Reproducción (Pie de cría)' },
-  { value: 'Ornamental', label: 'Ornamental' },
-  { value: 'Crianza', label: 'Crianza y Crecimiento' },
-  { value: 'Carne', label: 'Carne' },
-]
+const formPropositoOptions = computed(() => {
+  const list = [{ value: '', label: '-- Sin propósito definido --' }]
+  avesStore.catalogos.propositos.forEach((p) => {
+    list.push({ value: p.id, label: p.nombre })
+  })
+  return list
+})
 
 const estadoFiltroOptions = [
   { value: 'activa', label: 'Activas' },
@@ -217,8 +217,8 @@ const openCreateAve = () => {
     nombre: '',
     id_especie: avesStore.catalogos.especies[0]?.id || '',
     id_sexo: avesStore.catalogos.sexos[0]?.id || '',
+    id_proposito: avesStore.catalogos.propositos[0]?.id || '',
     raza: 'Criolla',
-    proposito: 'Postura',
     id_division: '',
     fecha_ingreso: new Date().toISOString().split('T')[0],
     fecha_nacimiento: '',
@@ -239,8 +239,8 @@ const openEditAve = (ave) => {
     nombre: ave.nombre || '',
     id_especie: ave.id_especie || ave.especie?.id || '',
     id_sexo: ave.id_sexo || ave.sexo?.id || '',
+    id_proposito: ave.id_proposito || ave.proposito?.id || '',
     raza: ave.raza || '',
-    proposito: ave.proposito || 'Postura',
     id_division: ave.id_division || '',
     fecha_ingreso: ave.fecha_ingreso || '',
     fecha_nacimiento: ave.fecha_nacimiento || '',
@@ -283,6 +283,7 @@ const handleSubmitAve = async () => {
       nombre: aveForm.value.nombre?.trim() || null,
       id_especie: Number(aveForm.value.id_especie),
       id_sexo: Number(aveForm.value.id_sexo),
+      id_proposito: aveForm.value.id_proposito ? Number(aveForm.value.id_proposito) : null,
       id_division: aveForm.value.id_division ? Number(aveForm.value.id_division) : null,
       peso_actual_kg: aveForm.value.peso_actual_kg ? Number(aveForm.value.peso_actual_kg) : null,
     }
@@ -638,7 +639,7 @@ const handleLogout = async () => {
                     {{ ave.raza || 'Criolla' }}
                   </p>
                   <p class="text-xs text-salvia">
-                    {{ ave.proposito || 'General' }}
+                    {{ ave.proposito?.nombre || 'General' }}
                   </p>
                 </td>
 
@@ -799,13 +800,13 @@ const handleLogout = async () => {
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <!-- Propósito -->
+          <!-- Propósito (Catálogo ctl_proposito) -->
           <FormField
             id="ave-proposito"
-            v-model="aveForm.proposito"
+            v-model="aveForm.id_proposito"
             type="select"
             label="Propósito"
-            :options="propositoOptions"
+            :options="formPropositoOptions"
           />
 
           <!-- Corral / División Inicial -->

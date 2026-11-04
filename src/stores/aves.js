@@ -7,6 +7,7 @@ export const useAvesStore = defineStore('aves', {
     catalogos: {
       especies: [],
       sexos: [],
+      propositos: [],
     },
     meta: {
       current_page: 1,
@@ -47,6 +48,7 @@ export const useAvesStore = defineStore('aves', {
         if (data) {
           this.catalogos.especies = data.especies || []
           this.catalogos.sexos = data.sexos || []
+          this.catalogos.propositos = data.propositos || []
         }
       } catch (err) {
         console.error('Error al cargar catálogos de aves:', err)
