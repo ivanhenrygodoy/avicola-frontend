@@ -573,10 +573,13 @@ const handleLogout = async () => {
           <table class="w-full text-left text-sm">
             <thead class="bg-crema/60 border-b border-borde text-verdoso font-bold text-xs uppercase tracking-wider">
               <tr>
-                <th scope="col" class="px-6 py-4">Ave / Identificador</th>
-                <th scope="col" class="px-6 py-4">Especie & Sexo</th>
-                <th scope="col" class="px-6 py-4">Raza & Propósito</th>
-                <th scope="col" class="px-6 py-4">Ubicación Actual</th>
+                <th scope="col" class="px-6 py-4">Ave</th>
+                <th scope="col" class="px-6 py-4">Identificador</th>
+                <th scope="col" class="px-6 py-4">Especie</th>
+                <th scope="col" class="px-6 py-4">Sexo</th>
+                <th scope="col" class="px-6 py-4">Raza</th>
+                <th scope="col" class="px-6 py-4">Propósito</th>
+                <th scope="col" class="px-6 py-4">Ubicación</th>
                 <th scope="col" class="px-6 py-4">Peso</th>
                 <th scope="col" class="px-6 py-4">Estado</th>
                 <th scope="col" class="px-6 py-4 text-right">Acciones</th>
@@ -585,7 +588,7 @@ const handleLogout = async () => {
 
             <tbody class="divide-y divide-borde">
               <tr v-if="avesStore.aves.length === 0">
-                <td colspan="7" class="px-6 py-12 text-center text-verdoso-muted">
+                <td colspan="10" class="px-6 py-12 text-center text-verdoso-muted">
                   No se encontraron aves con los criterios de búsqueda seleccionados.
                 </td>
               </tr>
@@ -595,67 +598,39 @@ const handleLogout = async () => {
                 :key="ave.id"
                 class="hover:bg-crema/30 transition-colors"
               >
-                <!-- Código y Nombre -->
-                <td class="px-6 py-4">
-                  <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-crema border border-borde flex items-center justify-center font-bold text-base text-bosque shadow-2xs">
-                      <span>{{ ave.especie?.icono || '🐔' }}</span>
-                    </div>
-                    <div>
-                      <p class="font-bold text-verdoso leading-snug">
-                        {{ ave.nombre ? `"${ave.nombre}"` : 'Sin sobrenombre' }}
-                      </p>
-                      <span class="font-mono text-xs text-salvia font-semibold">
-                        {{ ave.codigo }}
-                      </span>
-                    </div>
-                  </div>
+                <!-- Ave / Nombre -->
+                <td class="px-6 py-4 font-bold text-verdoso">
+                  {{ ave.nombre ? `"${ave.nombre}"` : '—' }}
                 </td>
 
-                <!-- Especie y Sexo (Catálogos ctl_especie y ctl_sexo) -->
-                <td class="px-6 py-4">
-                  <div class="space-y-1">
-                    <span
-                      :class="[
-                        'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold',
-                        ave.especie?.nombre === 'Gallina'
-                          ? 'bg-[#DDF3E3] text-bosque'
-                          : ave.especie?.nombre === 'Chompipe'
-                          ? 'bg-[#FFF1CC] text-amber-800'
-                          : 'bg-sky-100 text-sky-800'
-                      ]"
-                    >
-                      {{ ave.especie?.nombre || 'Especie' }}
-                    </span>
-                    <p class="text-xs text-verdoso-muted">
-                      {{ ave.sexo?.nombre || 'Desconocido' }}
-                    </p>
-                  </div>
+                <!-- Identificador / Código -->
+                <td class="px-6 py-4 font-mono text-sm text-verdoso">
+                  {{ ave.codigo }}
                 </td>
 
-                <!-- Raza y Propósito -->
-                <td class="px-6 py-4">
-                  <p class="text-sm font-medium text-verdoso">
-                    {{ ave.raza || 'Criolla' }}
-                  </p>
-                  <p class="text-xs text-salvia">
-                    {{ ave.proposito?.nombre || 'General' }}
-                  </p>
+                <!-- Especie (Solo texto plano) -->
+                <td class="px-6 py-4 text-verdoso">
+                  {{ ave.especie?.nombre || '—' }}
                 </td>
 
-                <!-- Ubicación Actual (Casita & Corral) -->
-                <td class="px-6 py-4">
-                  <div v-if="ave.division">
-                    <p class="text-sm font-bold text-verdoso">
-                      {{ ave.division.casita?.nombre || 'Casita' }}
-                    </p>
-                    <span class="inline-flex items-center gap-1 text-xs text-salvia font-medium">
-                      <Home class="w-3 h-3" /> {{ ave.division.nombre }}
-                    </span>
-                  </div>
-                  <span v-else class="text-xs text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md font-medium">
-                    Sin corral asignado
-                  </span>
+                <!-- Sexo (Solo texto plano) -->
+                <td class="px-6 py-4 text-verdoso">
+                  {{ ave.sexo?.nombre || '—' }}
+                </td>
+
+                <!-- Raza (Solo texto plano) -->
+                <td class="px-6 py-4 text-verdoso">
+                  {{ ave.raza || 'Criolla' }}
+                </td>
+
+                <!-- Propósito (Solo texto plano) -->
+                <td class="px-6 py-4 text-verdoso">
+                  {{ ave.proposito?.nombre || 'General' }}
+                </td>
+
+                <!-- Ubicación (Solo Casita, sin división) -->
+                <td class="px-6 py-4 text-verdoso font-medium">
+                  {{ ave.division?.casita?.nombre || 'Sin asignar' }}
                 </td>
 
                 <!-- Peso -->
@@ -663,7 +638,7 @@ const handleLogout = async () => {
                   {{ ave.peso_actual_kg ? `${ave.peso_actual_kg} kg` : '—' }}
                 </td>
 
-                <!-- Estado -->
+                <!-- Estado (Único con pill de color) -->
                 <td class="px-6 py-4">
                   <span
                     :class="[
