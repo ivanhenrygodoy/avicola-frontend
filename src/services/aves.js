@@ -10,6 +10,21 @@ export const getCatalogosAves = async () => {
   return response.data.data
 }
 
+export const getEspecies = async () => {
+  const response = await api.get('/aves/especies')
+  return response.data.data
+}
+
+export const getSexos = async () => {
+  const response = await api.get('/aves/sexos')
+  return response.data.data
+}
+
+export const getPropositos = async () => {
+  const response = await api.get('/aves/propositos')
+  return response.data.data
+}
+
 export const getAve = async (id) => {
   const response = await api.get(`/aves/${id}`)
   return response.data.data

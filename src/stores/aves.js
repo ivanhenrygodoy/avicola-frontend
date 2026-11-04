@@ -28,7 +28,7 @@ export const useAvesStore = defineStore('aves', {
       search: '',
       id_especie: '',
       id_sexo: '',
-      estado: 'activa',
+      estado: '',
       id_casita: '',
       id_division: '',
       per_page: 10,
@@ -44,14 +44,26 @@ export const useAvesStore = defineStore('aves', {
   actions: {
     async fetchCatalogos() {
       try {
-        const data = await avesService.getCatalogosAves()
-        if (data) {
-          this.catalogos.especies = data.especies || []
-          this.catalogos.sexos = data.sexos || []
-          this.catalogos.propositos = data.propositos || []
-        }
+        const [especies, sexos, propositos] = await Promise.all([
+          avesService.getEspecies(),
+          avesService.getSexos(),
+          avesService.getPropositos(),
+        ])
+        this.catalogos.especies = especies || []
+        this.catalogos.sexos = sexos || []
+        this.catalogos.propositos = propositos || []
       } catch (err) {
-        console.error('Error al cargar catálogos de aves:', err)
+        console.warn('Fallback cargando catálogos agrupados:', err)
+        try {
+          const data = await avesService.getCatalogosAves()
+          if (data) {
+            this.catalogos.especies = data.especies || []
+            this.catalogos.sexos = data.sexos || []
+            this.catalogos.propositos = data.propositos || []
+          }
+        } catch (fallbackErr) {
+          console.error('Error al cargar catálogos de aves:', fallbackErr)
+        }
       }
     },
 
@@ -107,7 +119,7 @@ export const useAvesStore = defineStore('aves', {
       this.filters.search = ''
       this.filters.id_especie = ''
       this.filters.id_sexo = ''
-      this.filters.estado = 'activa'
+      this.filters.estado = ''
       this.filters.id_casita = ''
       this.filters.id_division = ''
       this.filters.page = 1

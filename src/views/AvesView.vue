@@ -96,11 +96,19 @@ const trasladoErrors = ref({
   id_division_destino: '',
 })
 
-// Opciones dinámicas alimentadas desde ctl_especie y ctl_sexo
+// Opciones dinámicas alimentadas desde endpoints ctl_especie y ctl_sexo
 const especieFiltroOptions = computed(() => {
-  const options = [{ value: '', label: 'Todas las especies' }]
+  const options = [{ value: '', label: '' }]
   avesStore.catalogos.especies.forEach((esp) => {
-    options.push({ value: String(esp.id), label: `${esp.icono || ''} ${esp.nombre}` })
+    options.push({ value: String(esp.id), label: esp.nombre })
+  })
+  return options
+})
+
+const sexoFiltroOptions = computed(() => {
+  const options = [{ value: '', label: '' }]
+  avesStore.catalogos.sexos.forEach((s) => {
+    options.push({ value: String(s.id), label: s.nombre })
   })
   return options
 })
@@ -128,9 +136,9 @@ const formPropositoOptions = computed(() => {
 })
 
 const estadoFiltroOptions = [
+  { value: '', label: '' },
   { value: 'activa', label: 'Activas' },
   { value: 'salida', label: 'Bajas / Salidas' },
-  { value: 'todos', label: 'Todos los estados' },
 ]
 
 // Divisiones agrupadas para el formulario de Ave
@@ -521,22 +529,29 @@ const handleLogout = async () => {
       <!-- Barra de Filtros con Floating Inputs (Sin validación de requeridos) -->
       <div class="bg-white rounded-2xl border border-borde p-4 sm:p-6 shadow-xs space-y-4">
         <div class="flex flex-col lg:flex-row gap-4 justify-between items-stretch lg:items-center">
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 flex-1">
-            <!-- Búsqueda por código o sobrenombre -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 flex-1">
+            <!-- Búsqueda por código, nombre o raza -->
             <FloatingInput
               v-model="avesStore.filters.search"
-              label="Buscar por código o nombre..."
+              label="Buscar"
               @enter="handleSearch"
             />
 
-            <!-- Filtro Especie (Catálogo ctl_especie) -->
+            <!-- Filtro Especie (Catálogo ctl_especie sin icono, vacío por defecto) -->
             <FloatingSelect
               v-model="avesStore.filters.id_especie"
               label="Especie"
               :options="especieFiltroOptions"
             />
 
-            <!-- Filtro Estado -->
+            <!-- Filtro Sexo (Catálogo ctl_sexo, vacío por defecto) -->
+            <FloatingSelect
+              v-model="avesStore.filters.id_sexo"
+              label="Sexo"
+              :options="sexoFiltroOptions"
+            />
+
+            <!-- Filtro Estado (Vacío inicialmente, sin 'Todos los estados') -->
             <FloatingSelect
               v-model="avesStore.filters.estado"
               label="Estado del Ave"
