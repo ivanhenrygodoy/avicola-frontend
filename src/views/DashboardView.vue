@@ -60,6 +60,12 @@ const handleLogout = async () => {
             >
               <Home class="w-4 h-4 text-salvia" /> Instalaciones
             </router-link>
+            <router-link
+              to="/aves"
+              class="px-3 py-2 text-sm font-medium rounded-lg text-verdoso-muted hover:text-verdoso hover:bg-crema flex items-center gap-1.5 transition-colors"
+            >
+              <Layers class="w-4 h-4 text-salvia" /> Inventario de Aves
+            </router-link>
           </nav>
         </div>
 
