@@ -40,8 +40,13 @@ export const updateAve = async (id, payload) => {
   return response.data.data
 }
 
-export const deleteAve = async (id) => {
-  const response = await api.delete(`/aves/${id}`)
+export const deleteAve = async (id, payload = {}) => {
+  const response = await api.delete(`/aves/${id}`, { data: payload })
+  return response.data
+}
+
+export const reactivarAve = async (id, payload = {}) => {
+  const response = await api.patch(`/aves/${id}/reactivar`, payload)
   return response.data
 }
 

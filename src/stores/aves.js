@@ -138,9 +138,15 @@ export const useAvesStore = defineStore('aves', {
       return updated
     },
 
-    async removeAve(id) {
-      await avesService.deleteAve(id)
+    async removeAve(id, payload = {}) {
+      await avesService.deleteAve(id, payload)
       await this.fetchAves()
+    },
+
+    async reactivarAve(id, payload = {}) {
+      const response = await avesService.reactivarAve(id, payload)
+      await this.fetchAves()
+      return response
     },
 
     async trasladarAve(id, payload) {

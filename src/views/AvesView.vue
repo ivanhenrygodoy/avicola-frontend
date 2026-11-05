@@ -32,6 +32,7 @@ import {
   Pencil,
   Trash2,
   ArrowRightLeft,
+  RotateCcw,
   User,
   LogOut,
   Loader2,
@@ -55,6 +56,7 @@ const showDetalleModal = ref(false)
 const showTrasladoModal = ref(false)
 const showMovimientosModal = ref(false)
 const showDeleteModal = ref(false)
+const showReactivarModal = ref(false)
 const isEditing = ref(false)
 const isSubmitting = ref(false)
 
@@ -140,7 +142,7 @@ const formPropositoOptions = computed(() => {
 
 const estadoFiltroOptions = [
   { value: 'activa', label: 'Activas' },
-  { value: 'salida', label: 'Bajas / Salidas' },
+  { value: 'salida', label: 'Bajas' },
 ]
 
 // Divisiones agrupadas para el formulario de Ave
@@ -403,8 +405,15 @@ const openMovimientos = async (ave) => {
 }
 
 // Modal Dar de Baja
+const defaultBajaForm = () => ({
+  motivo: 'Baja / Salida',
+  observaciones: '',
+})
+const bajaForm = ref(defaultBajaForm())
+
 const openDeleteAve = (ave) => {
   targetAve.value = ave
+  bajaForm.value = defaultBajaForm()
   showDeleteModal.value = true
 }
 
@@ -415,12 +424,54 @@ const handleConfirmDelete = async () => {
   showActionLoader.value = true
 
   try {
-    await avesStore.removeAve(targetAve.value.id)
-    notify.success('Registro de ave actualizado correctamente.')
+    await avesStore.removeAve(targetAve.value.id, {
+      motivo: bajaForm.value.motivo?.trim() || 'Baja / Salida',
+      observaciones: bajaForm.value.observaciones?.trim() || null,
+    })
+    notify.success(`El ave ${targetAve.value.codigo} ha sido dada de baja correctamente y se registró el movimiento de salida.`)
     showDeleteModal.value = false
   } catch (err) {
     console.error('Error al dar de baja ave:', err)
     notify.error('Error al procesar la baja del ave.')
+  } finally {
+    isSubmitting.value = false
+    showActionLoader.value = false
+  }
+}
+
+// Modal Reactivar / Reincorporar Ave
+const defaultReactivarForm = () => ({
+  id_division_destino: '',
+  observaciones: '',
+})
+const reactivarForm = ref(defaultReactivarForm())
+
+const openReactivarAve = (ave) => {
+  targetAve.value = ave
+  reactivarForm.value = defaultReactivarForm()
+  showReactivarModal.value = true
+}
+
+const handleConfirmReactivar = async () => {
+  if (!targetAve.value) return
+  isSubmitting.value = true
+  actionLoaderMessage.value = `Reactivando ave ${targetAve.value.codigo}...`
+  showActionLoader.value = true
+
+  try {
+    const payload = {
+      observaciones: reactivarForm.value.observaciones?.trim() || null,
+    }
+    if (reactivarForm.value.id_division_destino) {
+      payload.id_division_destino = Number(reactivarForm.value.id_division_destino)
+    }
+
+    await avesStore.reactivarAve(targetAve.value.id, payload)
+    notify.success(`El ave ${targetAve.value.codigo} ha sido reactivada e incorporada exitosamente, registrando el movimiento de reingreso.`)
+    showReactivarModal.value = false
+  } catch (err) {
+    console.error('Error al reactivar ave:', err)
+    notify.error(err.response?.data?.message || 'Error al procesar la reactivación del ave.')
   } finally {
     isSubmitting.value = false
     showActionLoader.value = false
@@ -511,7 +562,7 @@ const handleLogout = async () => {
             <div class="absolute inset-0 rounded-full border-4 border-borde border-t-[#244B36] border-r-[#6F9678] animate-spin"></div>
             <GallinaIcon class="w-7 h-7 text-bosque animate-pulse select-none" />
           </div>
-          <p class="text-sm font-bold text-verdoso">Consultando inventario de aves...</p>
+          <p class="text-sm font-bold text-verdoso">Consultando registros...</p>
           <p class="text-xs text-verdoso-muted mt-1">Por favor, espere un momento mientras se actualiza el listado.</p>
         </div>
 
@@ -598,11 +649,11 @@ const handleLogout = async () => {
                         : 'bg-red-50 text-red-700 border-red-200'
                     ]"
                   >
-                    {{ ave.estado === 'activa' ? 'Activa' : 'Baja / Salida' }}
+                    {{ ave.estado === 'activa' ? 'Activa' : 'Baja' }}
                   </span>
                 </td>
 
-                <!-- Acciones (Detalle 👁️, Historial 🕒, Trasladar ⇄, Lápiz ✏️, Basura 🗑️) con accesibilidad aria-label y toque ergonómico -->
+                <!-- Acciones (Detalle 👁️, Historial 🕒, Trasladar ⇄, Lápiz ✏️, Basura 🗑️ / Reactivar 🔄) con accesibilidad aria-label y toque ergonómico -->
                 <td class="px-6 py-4 text-right">
                   <div class="flex items-center justify-end gap-1.5 text-salvia">
                     <!-- Ojito: Ver Detalle Completo del Ave (Lectura) -->
@@ -646,14 +697,26 @@ const handleLogout = async () => {
                       <Pencil class="w-4 h-4" />
                     </button>
 
-                    <!-- Basurero: Dar de baja -->
+                    <!-- Basurero: Dar de baja (solo cuando está activa) -->
                     <button
+                      v-if="ave.estado === 'activa'"
                       @click="openDeleteAve(ave)"
                       class="p-2 min-w-[34px] min-h-[34px] inline-flex items-center justify-center hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                      title="Dar de baja / eliminar ave"
-                      aria-label="Dar de baja / eliminar ave"
+                      title="Dar de baja ave"
+                      aria-label="Dar de baja ave"
                     >
                       <Trash2 class="w-4 h-4" />
+                    </button>
+
+                    <!-- Icono de Retorno: Reactivar / Reincorporar ave (cuando está de baja) -->
+                    <button
+                      v-else
+                      @click="openReactivarAve(ave)"
+                      class="p-2 min-w-[34px] min-h-[34px] inline-flex items-center justify-center text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer"
+                      title="Reactivar ave / Marcar como regresada"
+                      aria-label="Reactivar ave / Marcar como regresada"
+                    >
+                      <RotateCcw class="w-4 h-4" />
                     </button>
                   </div>
                 </td>
@@ -693,7 +756,7 @@ const handleLogout = async () => {
                 targetAve?.estado === 'activa' ? 'bg-[#DDF3E3] text-bosque' : 'bg-[#FEE2E2] text-red-800'
               ]"
             >
-              {{ targetAve?.estado === 'activa' ? 'Activa' : 'Baja / Salida' }}
+              {{ targetAve?.estado === 'activa' ? 'Activa' : 'Baja' }}
             </span>
           </div>
           <h3 class="text-xl font-bold text-verdoso mt-1">
@@ -1078,15 +1141,42 @@ const handleLogout = async () => {
               <Calendar class="w-3.5 h-3.5 text-salvia" />
               {{ formatDate(mov.fecha) }}
             </span>
-            <span class="text-salvia font-mono">Movimiento #{{ mov.id }}</span>
+            <div class="flex items-center gap-2">
+              <span
+                v-if="mov.motivo"
+                :class="[
+                  'px-2 py-0.5 rounded-full text-[10px] font-bold border',
+                  mov.motivo.toLowerCase().includes('reingreso')
+                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                    : mov.motivo.toLowerCase().includes('baja') || mov.motivo.toLowerCase().includes('salida')
+                    ? 'bg-red-50 text-red-800 border-red-200'
+                    : 'bg-bosque-50 text-bosque border-bosque/20'
+                ]"
+              >
+                {{ mov.motivo }}
+              </span>
+              <span class="text-salvia font-mono">#{{ mov.id }}</span>
+            </div>
           </div>
 
           <div class="flex items-center gap-2 text-xs font-semibold text-verdoso">
             <span class="text-salvia">De:</span>
-            <span>{{ mov.division_origen?.nombre || 'Ingreso inicial' }}</span>
+            <span>
+              {{
+                mov.division_origen
+                  ? `${mov.division_origen.casita?.nombre ? mov.division_origen.casita.nombre + ' • ' : ''}${mov.division_origen.nombre}`
+                  : (mov.motivo?.toLowerCase().includes('reingreso') ? 'Reingreso (Fuera de plantel)' : 'Ingreso inicial')
+              }}
+            </span>
             <ArrowRightLeft class="w-3.5 h-3.5 text-bosque" />
             <span class="text-salvia">A:</span>
-            <span class="text-bosque">{{ mov.division_destino?.nombre || 'Salida' }}</span>
+            <span class="text-bosque">
+              {{
+                mov.division_destino
+                  ? `${mov.division_destino.casita?.nombre ? mov.division_destino.casita.nombre + ' • ' : ''}${mov.division_destino.nombre}`
+                  : (mov.motivo?.toLowerCase().includes('baja') || mov.motivo?.toLowerCase().includes('salida') ? 'Baja / Salida' : 'Sin asignación inicial')
+              }}
+            </span>
           </div>
 
           <p v-if="mov.motivo" class="text-xs text-verdoso-muted">
@@ -1111,19 +1201,130 @@ const handleLogout = async () => {
       </template>
     </BaseModal>
 
-    <!-- MODAL 4: Confirmación de Baja / Eliminación -->
-    <BaseConfirmModal
+    <!-- MODAL 4: Dar de Baja a Ave (Genera Movimiento de Salida) -->
+    <BaseModal
       :is-open="showDeleteModal"
-      title="¿Dar de baja a esta ave?"
-      :question="`¿Estás seguro de registrar la salida de ${targetAve?.codigo} (${targetAve?.nombre || targetAve?.especie?.nombre})?`"
-      description="Se conservará su historial cronológico de movimientos y se actualizará su estado a salida."
-      confirm-text="Confirmar Baja"
-      cancel-text="Cancelar"
-      :is-destructive="true"
-      :loading="isSubmitting"
-      @confirm="handleConfirmDelete"
+      title="Dar de Baja a Ave"
+      max-width="md"
       @close="showDeleteModal = false"
-    />
+    >
+      <form id="baja-form" @submit.prevent="handleConfirmDelete" class="space-y-4">
+        <div class="p-4 bg-red-50 border border-red-200 rounded-2xl flex items-start gap-3">
+          <Trash2 class="w-5 h-5 text-red-700 mt-0.5 shrink-0" />
+          <div class="text-xs text-red-900 space-y-1">
+            <p class="font-bold text-sm">
+              ¿Dar de baja a {{ targetAve?.codigo }} ({{ targetAve?.nombre || targetAve?.especie?.nombre }})?
+            </p>
+            <p>
+              El ave pasará a estado <strong>Baja</strong> y se registrará automáticamente su movimiento de <strong>Baja / Salida</strong> en el historial.
+            </p>
+          </div>
+        </div>
+
+        <FormField
+          id="baja-motivo"
+          v-model="bajaForm.motivo"
+          label="Motivo de la Baja"
+          placeholder="Ej. Baja / Salida, Venta, Muerte natural, Descarte"
+          :disabled="isSubmitting"
+        />
+
+        <FormField
+          id="baja-obs"
+          v-model="bajaForm.observaciones"
+          type="textarea"
+          label="Observaciones (Opcional)"
+          placeholder="Detalles sobre el estado o causa de la baja..."
+          :rows="2"
+          :disabled="isSubmitting"
+        />
+      </form>
+
+      <template #footer>
+        <button
+          type="button"
+          @click="showDeleteModal = false"
+          :disabled="isSubmitting"
+          class="px-5 py-2 btn-secundario text-sm cursor-pointer"
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          @click="handleConfirmDelete"
+          :disabled="isSubmitting"
+          class="px-6 py-2 bg-red-700 text-white hover:bg-red-800 rounded-xl font-medium text-sm shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
+        >
+          <Loader2 v-if="isSubmitting" class="w-4 h-4 animate-spin" />
+          <Trash2 v-else class="w-4 h-4" />
+          <span>Confirmar Baja</span>
+        </button>
+      </template>
+    </BaseModal>
+
+    <!-- MODAL 5: Reactivar e Incorporar Ave (Genera Movimiento de Reingreso) -->
+    <BaseModal
+      :is-open="showReactivarModal"
+      title="Reactivar e Incorporar Ave"
+      max-width="md"
+      @close="showReactivarModal = false"
+    >
+      <form id="reactivar-form" @submit.prevent="handleConfirmReactivar" class="space-y-4">
+        <div class="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-start gap-3">
+          <RotateCcw class="w-5 h-5 text-emerald-700 mt-0.5 shrink-0" />
+          <div class="text-xs text-emerald-900 space-y-1">
+            <p class="font-bold text-sm">
+              ¿Reactivar al ave {{ targetAve?.codigo }} ({{ targetAve?.nombre || targetAve?.especie?.nombre }})?
+            </p>
+            <p>
+              El ave volverá a estar <strong>Activa</strong> y se generará automáticamente su movimiento de <strong>Reingreso</strong> en el historial.
+            </p>
+          </div>
+        </div>
+
+        <!-- Asignación de corral opcional -->
+        <FormField
+          id="reactivar-division"
+          v-model="reactivarForm.id_division_destino"
+          type="select"
+          label="Corral / División de Destino"
+          :options="divisionesDisponibles"
+          :disabled="isSubmitting"
+        />
+
+        <!-- Observaciones de reingreso -->
+        <FormField
+          id="reactivar-obs"
+          v-model="reactivarForm.observaciones"
+          type="textarea"
+          label="Observaciones del Reingreso (Opcional)"
+          placeholder="Ej. Ave recuperada, retorno de cuarentena, etc."
+          :rows="2"
+          :disabled="isSubmitting"
+        />
+      </form>
+
+      <template #footer>
+        <button
+          type="button"
+          @click="showReactivarModal = false"
+          :disabled="isSubmitting"
+          class="px-5 py-2 btn-secundario text-sm cursor-pointer"
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          @click="handleConfirmReactivar"
+          :disabled="isSubmitting"
+          class="px-6 py-2 btn-principal text-sm shadow-xs flex items-center gap-1.5 cursor-pointer"
+        >
+          <Loader2 v-if="isSubmitting" class="w-4 h-4 animate-spin" />
+          <RotateCcw v-else class="w-4 h-4" />
+          <span>Confirmar Reingreso</span>
+        </button>
+      </template>
+    </BaseModal>
 
     <!-- Overlay de Carga Global Corporativo -->
     <ActionLoader

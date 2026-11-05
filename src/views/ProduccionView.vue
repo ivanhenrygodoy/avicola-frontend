@@ -556,7 +556,7 @@ const executeDelete = async () => {
               <div class="absolute inset-0 rounded-full border-4 border-borde border-t-[#244B36] border-r-[#6F9678] animate-spin"></div>
               <GallinaIcon class="w-7 h-7 text-bosque animate-pulse select-none" />
             </div>
-            <p class="text-sm font-bold text-verdoso">Consultando registros de postura...</p>
+            <p class="text-sm font-bold text-verdoso">Consultando registros...</p>
             <p class="text-xs text-verdoso-muted mt-1">Por favor, espere un momento mientras se actualiza el listado.</p>
           </div>
 
@@ -755,7 +755,7 @@ const executeDelete = async () => {
               <div class="absolute inset-0 rounded-full border-4 border-borde border-t-[#244B36] border-r-[#6F9678] animate-spin"></div>
               <GallinaIcon class="w-7 h-7 text-bosque animate-pulse select-none" />
             </div>
-            <p class="text-sm font-bold text-verdoso">Consultando registros de raciones...</p>
+            <p class="text-sm font-bold text-verdoso">Consultando registros...</p>
             <p class="text-xs text-verdoso-muted mt-1">Por favor, espere un momento mientras se actualiza el listado.</p>
           </div>
 
