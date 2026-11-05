@@ -141,6 +141,17 @@ const unidadOptions = [
   { value: 'g', label: 'Gramos (g)' },
 ]
 
+// Conversión de fecha (DD-MM-YYYY a YYYY-MM-DD) para formularios HTML5
+const toInputDate = (dateStr) => {
+  if (!dateStr) return ''
+  const parts = String(dateStr).substring(0, 10).split('-')
+  if (parts.length === 3) {
+    if (parts[0].length === 4) return parts.join('-')
+    return `${parts[2]}-${parts[1]}-${parts[0]}`
+  }
+  return dateStr
+}
+
 onMounted(async () => {
   await Promise.allSettled([
     instalacionesStore.fetchCasitas({ per_page: 100 }),
@@ -244,7 +255,7 @@ const openEditHuevoModal = (huevo) => {
   huevoForm.value = {
     id: huevo.id,
     id_division: huevo.id_division,
-    fecha: huevo.fecha ? huevo.fecha.substring(0, 10) : '',
+    fecha: toInputDate(huevo.fecha),
     cantidad_recolectada: huevo.cantidad_recolectada,
     cantidad_rotos: huevo.cantidad_rotos,
     observaciones: huevo.observaciones || '',
@@ -323,7 +334,7 @@ const openEditAlimentacionModal = (item) => {
     id: item.id,
     id_division: item.id_division,
     id_tipo_alimento: item.id_tipo_alimento,
-    fecha: item.fecha ? item.fecha.substring(0, 10) : '',
+    fecha: toInputDate(item.fecha),
     hora: item.hora ? item.hora.substring(0, 5) : '',
     cantidad: item.cantidad,
     unidad_medida: item.unidad_medida || 'kg',
@@ -579,14 +590,14 @@ const executeDelete = async () => {
                   :key="item.id"
                   class="hover:bg-crema/40 transition-colors"
                 >
-                  <!-- Fecha -->
-                  <td class="px-6 py-4 whitespace-nowrap font-medium text-verdoso">
+                  <!-- Fecha (formateada desde backend) -->
+                  <td class="px-6 py-4 whitespace-nowrap text-verdoso">
                     {{ item.fecha }}
                   </td>
 
-                  <!-- Corral -->
+                  <!-- Ubicación / Corral (combinado) -->
                   <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="font-semibold text-verdoso">
+                    <div class="text-verdoso">
                       {{ item.division?.nombre || 'Corral' }}
                     </div>
                     <div class="text-xs text-verdoso-muted">
@@ -595,7 +606,7 @@ const executeDelete = async () => {
                   </td>
 
                   <!-- Recolectados -->
-                  <td class="px-6 py-4 whitespace-nowrap text-center font-semibold text-verdoso">
+                  <td class="px-6 py-4 whitespace-nowrap text-center text-verdoso">
                     {{ item.cantidad_recolectada }}
                   </td>
 
@@ -603,7 +614,7 @@ const executeDelete = async () => {
                   <td class="px-6 py-4 whitespace-nowrap text-center">
                     <span
                       v-if="item.cantidad_rotos > 0"
-                      class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200"
+                      class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs bg-amber-50 text-amber-800 border border-amber-200"
                     >
                       {{ item.cantidad_rotos }} rotos
                     </span>
@@ -612,7 +623,7 @@ const executeDelete = async () => {
 
                   <!-- Aprovechables -->
                   <td class="px-6 py-4 whitespace-nowrap text-center">
-                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-bosque-50 text-bosque border border-bosque/20">
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs bg-bosque-50 text-bosque border border-bosque/20">
                       {{ item.cantidad_aprovechables }} sanos
                     </span>
                   </td>
@@ -763,7 +774,7 @@ const executeDelete = async () => {
             <table class="w-full text-left text-sm">
               <thead class="bg-crema/60 border-b border-borde text-verdoso font-bold text-xs uppercase tracking-wider">
                 <tr>
-                  <th scope="col" class="px-6 py-4">Fecha y Hora</th>
+                  <th scope="col" class="px-6 py-4">Fecha</th>
                   <th scope="col" class="px-6 py-4">Corral / División</th>
                   <th scope="col" class="px-6 py-4">Tipo de Alimento</th>
                   <th scope="col" class="px-6 py-4 text-center">Cantidad Suministrada</th>
@@ -778,15 +789,14 @@ const executeDelete = async () => {
                   :key="item.id"
                   class="hover:bg-crema/40 transition-colors"
                 >
-                  <!-- Fecha / Hora -->
-                  <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="font-medium text-verdoso">{{ item.fecha }}</div>
-                    <div v-if="item.hora" class="text-xs text-verdoso-muted">{{ item.hora }}</div>
+                  <!-- Fecha (formateada desde backend) -->
+                  <td class="px-6 py-4 whitespace-nowrap text-verdoso">
+                    {{ item.fecha }}
                   </td>
 
-                  <!-- Corral -->
+                  <!-- Corral / División (combinado) -->
                   <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="font-semibold text-verdoso">
+                    <div class="text-verdoso">
                       {{ item.division?.nombre || 'Corral' }}
                     </div>
                     <div class="text-xs text-verdoso-muted">
@@ -794,15 +804,13 @@ const executeDelete = async () => {
                     </div>
                   </td>
 
-                  <!-- Tipo de Alimento -->
-                  <td class="px-6 py-4 whitespace-nowrap">
-                    <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold bg-crema text-verdoso border border-borde">
-                      {{ item.tipo_alimento?.nombre || 'Alimento' }}
-                    </span>
+                  <!-- Tipo de Alimento (texto normal) -->
+                  <td class="px-6 py-4 whitespace-nowrap text-verdoso">
+                    {{ item.tipo_alimento?.nombre || '—' }}
                   </td>
 
                   <!-- Cantidad -->
-                  <td class="px-6 py-4 whitespace-nowrap text-center font-bold text-bosque">
+                  <td class="px-6 py-4 whitespace-nowrap text-center text-bosque">
                     {{ item.cantidad }} {{ item.unidad_medida }}
                   </td>
 

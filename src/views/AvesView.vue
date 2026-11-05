@@ -609,8 +609,8 @@ const handleLogout = async () => {
                 :key="ave.id"
                 class="hover:bg-crema/30 transition-colors"
               >
-                <!-- Ave / Nombre -->
-                <td class="px-6 py-4 font-bold text-verdoso">
+                <!-- Ave / Nombre (texto normal) -->
+                <td class="px-6 py-4 text-verdoso">
                   {{ ave.nombre ? `"${ave.nombre}"` : '—' }}
                 </td>
 
@@ -635,7 +635,7 @@ const handleLogout = async () => {
                 </td>
 
                 <!-- Ubicación (Solo Casita, sin división) -->
-                <td class="px-6 py-4 text-verdoso font-medium">
+                <td class="px-6 py-4 text-verdoso">
                   {{ ave.division?.casita?.nombre || 'Sin asignar' }}
                 </td>
 
@@ -643,7 +643,7 @@ const handleLogout = async () => {
                 <td class="px-6 py-4">
                   <span
                     :class="[
-                      'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border',
+                      'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs border',
                       ave.estado === 'activa'
                         ? 'bg-bosque-50 text-bosque border-bosque/20'
                         : 'bg-red-50 text-red-700 border-red-200'

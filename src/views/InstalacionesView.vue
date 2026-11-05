@@ -517,17 +517,17 @@ const handleLogout = async () => {
               >
                 <!-- Nombre de Casita (Solo nombre, sin leyenda secundaria) -->
                 <td class="px-6 py-4">
-                  <div class="font-bold text-verdoso">{{ casita.nombre }}</div>
+                  <div class="text-verdoso">{{ casita.nombre }}</div>
                 </td>
 
                 <!-- Tipo -->
-                <td class="px-6 py-4 text-verdoso font-medium">
+                <td class="px-6 py-4 text-verdoso">
                   {{ casita.tipo || 'General' }}
                 </td>
 
                 <!-- Cantidad de Corrales -->
                 <td class="px-6 py-4">
-                  <span class="inline-flex items-center gap-1.5 text-xs font-semibold text-verdoso bg-crema px-2.5 py-1 rounded-full border border-borde">
+                  <span class="inline-flex items-center gap-1.5 text-xs text-verdoso bg-crema px-2.5 py-1 rounded-full border border-borde">
                     <Layers class="w-3.5 h-3.5 text-salvia" />
                     {{ casita.divisiones?.length || 0 }} {{ casita.divisiones?.length === 1 ? 'corral' : 'corrales' }}
                   </span>
@@ -544,7 +544,7 @@ const handleLogout = async () => {
                     @click="openToggleCasitaModal(casita)"
                     :title="casita.activa ? 'Clic para deshabilitar' : 'Clic para habilitar'"
                     :class="[
-                      'inline-block px-3 py-1 rounded-full text-xs font-semibold cursor-pointer transition-all border',
+                      'inline-block px-3 py-1 rounded-full text-xs cursor-pointer transition-all border',
                       casita.activa
                         ? 'bg-bosque-50 text-bosque border-bosque/20 hover:bg-bosque-100'
                         : 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100'
