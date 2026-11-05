@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useInstalacionesStore } from '@/stores/instalaciones'
 import { useAvesStore } from '@/stores/aves'
+import { useProduccionStore } from '@/stores/produccion'
 import AppHeader from '@/components/common/AppHeader.vue'
 import GallinaIcon from '@/components/common/GallinaIcon.vue'
 import StatCard from '@/components/common/StatCard.vue'
@@ -10,11 +11,13 @@ import {
   Building,
   ArrowRight,
   Calendar,
+  Egg,
 } from 'lucide-vue-next'
 
 const authStore = useAuthStore()
 const instalacionesStore = useInstalacionesStore()
 const avesStore = useAvesStore()
+const produccionStore = useProduccionStore()
 
 const loadingStats = ref(true)
 
@@ -27,6 +30,8 @@ onMounted(async () => {
     }
     promises.push(instalacionesStore.fetchCasitas())
     promises.push(avesStore.fetchAves())
+    promises.push(produccionStore.fetchHuevos())
+    promises.push(produccionStore.fetchAlimentacion())
     await Promise.allSettled(promises)
   } finally {
     loadingStats.value = false
@@ -58,7 +63,7 @@ const fechaFormateada = fechaActual.charAt(0).toUpperCase() + fechaActual.slice(
             Bienvenido, {{ authStore.user?.name || 'Administrador' }}
           </h2>
           <p class="text-sm text-verdoso-muted mt-1">
-            Supervisión integral de corrales, bioseguridad y población avícola.
+            Supervisión integral de corrales, bioseguridad, postura y raciones diarias.
           </p>
         </div>
 
@@ -83,18 +88,18 @@ const fechaFormateada = fechaActual.charAt(0).toUpperCase() + fechaActual.slice(
             :value="instalacionesStore.stats.total_casitas || instalacionesStore.casitas.length || 0"
           />
           <StatCard
-            title="Divisiones Habilitadas"
-            :value="instalacionesStore.stats.divisiones_activas || 0"
-            value-color-class="text-bosque"
-          />
-          <StatCard
             title="Población de Aves"
             :value="avesStore.stats.total_aves || avesStore.aves.length || 0"
             value-color-class="text-bosque"
           />
           <StatCard
-            title="Especies en Producción"
-            value="3"
+            title="Huevos Aprovechables"
+            :value="produccionStore.statsHuevos.total_aprovechables || 0"
+            value-color-class="text-bosque"
+          />
+          <StatCard
+            title="Alimento Suministrado"
+            :value="(produccionStore.statsAlimentacion.total_kilos || 0) + ' kg'"
             value-color-class="text-verdoso"
           />
         </div>
@@ -109,11 +114,11 @@ const fechaFormateada = fechaActual.charAt(0).toUpperCase() + fechaActual.slice(
           <span class="text-xs text-verdoso-muted">Acceso directo a gestión</span>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
           <!-- Tarjeta Módulo 1: Instalaciones Físicas -->
           <router-link
             to="/instalaciones"
-            class="group bg-white p-6 sm:p-7 rounded-2xl border border-borde hover:border-salvia hover:shadow-xs transition-all duration-200 flex flex-col justify-between"
+            class="group bg-white p-6 rounded-2xl border border-borde hover:border-salvia hover:shadow-xs transition-all duration-200 flex flex-col justify-between"
           >
             <div class="space-y-4">
               <div class="flex items-center justify-between">
@@ -121,30 +126,30 @@ const fechaFormateada = fechaActual.charAt(0).toUpperCase() + fechaActual.slice(
                   <Building class="w-6 h-6 transition-colors duration-200" />
                 </div>
                 <span class="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-bosque-50 text-bosque border border-bosque/10">
-                  {{ instalacionesStore.stats.total_casitas || instalacionesStore.casitas.length || 0 }} casitas activas
+                  {{ instalacionesStore.stats.total_casitas || instalacionesStore.casitas.length || 0 }} casitas
                 </span>
               </div>
 
               <div>
-                <h4 class="text-xl font-bold text-verdoso group-hover:text-bosque transition-colors">
+                <h4 class="text-lg font-bold text-verdoso group-hover:text-bosque transition-colors">
                   Instalaciones Físicas
                 </h4>
-                <p class="text-sm text-verdoso-muted leading-relaxed mt-2">
-                  Gestión y mantenimiento de casitas, galpones y divisiones perimetrales con segregación por especie para gallinas criollas, chompipes y patos pichiches.
+                <p class="text-xs text-verdoso-muted leading-relaxed mt-2">
+                  Gestión y control de casitas, galpones y divisiones perimetrales con segregación biológica.
                 </p>
               </div>
             </div>
 
-            <div class="pt-6 mt-6 border-t border-borde flex items-center justify-between text-sm font-semibold text-bosque group-hover:text-bosque-hover">
+            <div class="pt-5 mt-5 border-t border-borde flex items-center justify-between text-xs font-semibold text-bosque group-hover:text-bosque-hover">
               <span>Gestionar instalaciones</span>
-              <ArrowRight class="w-5 h-5 group-hover:translate-x-1.5 transition-transform duration-200" />
+              <ArrowRight class="w-4 h-4 group-hover:translate-x-1.5 transition-transform duration-200" />
             </div>
           </router-link>
 
-          <!-- Tarjeta Módulo 2: Inventario de Aves (Totalmente Funcional) -->
+          <!-- Tarjeta Módulo 2: Inventario de Aves -->
           <router-link
             to="/aves"
-            class="group bg-white p-6 sm:p-7 rounded-2xl border border-borde hover:border-salvia hover:shadow-xs transition-all duration-200 flex flex-col justify-between"
+            class="group bg-white p-6 rounded-2xl border border-borde hover:border-salvia hover:shadow-xs transition-all duration-200 flex flex-col justify-between"
           >
             <div class="space-y-4">
               <div class="flex items-center justify-between">
@@ -152,23 +157,54 @@ const fechaFormateada = fechaActual.charAt(0).toUpperCase() + fechaActual.slice(
                   <GallinaIcon class="w-7 h-7 transition-colors duration-200" />
                 </div>
                 <span class="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-bosque-50 text-bosque border border-bosque/10">
-                  {{ avesStore.stats.total_aves || avesStore.aves.length || 0 }} aves registradas
+                  {{ avesStore.stats.total_aves || avesStore.aves.length || 0 }} aves
                 </span>
               </div>
 
               <div>
-                <h4 class="text-xl font-bold text-verdoso group-hover:text-bosque transition-colors">
+                <h4 class="text-lg font-bold text-verdoso group-hover:text-bosque transition-colors">
                   Inventario de Aves
                 </h4>
-                <p class="text-sm text-verdoso-muted leading-relaxed mt-2">
-                  Registro individual por código alfanumérico y sobrenombre, trazabilidad sanitaria, histórico de movimientos y traslados con validación biológica entre divisiones.
+                <p class="text-xs text-verdoso-muted leading-relaxed mt-2">
+                  Registro por código y nombre, trazabilidad sanitaria y traslados con validación de especie.
                 </p>
               </div>
             </div>
 
-            <div class="pt-6 mt-6 border-t border-borde flex items-center justify-between text-sm font-semibold text-bosque group-hover:text-bosque-hover">
+            <div class="pt-5 mt-5 border-t border-borde flex items-center justify-between text-xs font-semibold text-bosque group-hover:text-bosque-hover">
               <span>Gestionar inventario avícola</span>
-              <ArrowRight class="w-5 h-5 group-hover:translate-x-1.5 transition-transform duration-200" />
+              <ArrowRight class="w-4 h-4 group-hover:translate-x-1.5 transition-transform duration-200" />
+            </div>
+          </router-link>
+
+          <!-- Tarjeta Módulo 3: Alimentación y Producción (Etapa 4) -->
+          <router-link
+            to="/produccion"
+            class="group bg-white p-6 rounded-2xl border border-borde hover:border-salvia hover:shadow-xs transition-all duration-200 flex flex-col justify-between"
+          >
+            <div class="space-y-4">
+              <div class="flex items-center justify-between">
+                <div class="w-12 h-12 rounded-xl bg-bosque-50 text-bosque flex items-center justify-center group-hover:bg-bosque group-hover:text-white transition-colors duration-200">
+                  <Egg class="w-6 h-6 transition-colors duration-200" />
+                </div>
+                <span class="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-bosque-50 text-bosque border border-bosque/10">
+                  {{ produccionStore.statsHuevos.total_aprovechables || 0 }} sanos hoy
+                </span>
+              </div>
+
+              <div>
+                <h4 class="text-lg font-bold text-verdoso group-hover:text-bosque transition-colors">
+                  Alimentación y Postura
+                </h4>
+                <p class="text-xs text-verdoso-muted leading-relaxed mt-2">
+                  Control diario de recolección de huevos por corral y registro de raciones alimenticias por especie.
+                </p>
+              </div>
+            </div>
+
+            <div class="pt-5 mt-5 border-t border-borde flex items-center justify-between text-xs font-semibold text-bosque group-hover:text-bosque-hover">
+              <span>Gestionar producción y raciones</span>
+              <ArrowRight class="w-4 h-4 group-hover:translate-x-1.5 transition-transform duration-200" />
             </div>
           </router-link>
         </div>

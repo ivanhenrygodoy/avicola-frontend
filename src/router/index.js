@@ -27,6 +27,12 @@ const routes = [
     meta: { requiresAuth: true },
   },
   {
+    path: '/produccion',
+    name: 'produccion',
+    component: () => import('@/views/ProduccionView.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
     path: '/:pathMatch(.*)*',
     redirect: '/',
   },

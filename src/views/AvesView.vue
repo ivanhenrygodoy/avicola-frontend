@@ -18,6 +18,7 @@ import FormField from '@/components/common/FormField.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
 import AvesStats from '@/components/aves/AvesStats.vue'
 import AppHeader from '@/components/common/AppHeader.vue'
+import GallinaIcon from '@/components/common/GallinaIcon.vue'
 
 // Iconos Lucide
 import {
@@ -504,10 +505,14 @@ const handleLogout = async () => {
 
       <!-- Tabla de Inventario de Aves -->
       <div class="bg-white rounded-2xl border border-borde shadow-xs overflow-hidden">
-        <!-- Indicador de Carga -->
-        <div v-if="avesStore.loading" class="p-12 text-center">
-          <Loader2 class="w-8 h-8 animate-spin mx-auto text-bosque mb-2" />
-          <p class="text-sm text-verdoso-muted">Consultando inventario de aves...</p>
+        <!-- Indicador de Carga Estandarizado con Imagotipo Corporativo GallinaIcon -->
+        <div v-if="avesStore.loading" class="p-12 text-center flex flex-col items-center justify-center">
+          <div class="relative w-14 h-14 flex items-center justify-center mb-3">
+            <div class="absolute inset-0 rounded-full border-4 border-borde border-t-[#244B36] border-r-[#6F9678] animate-spin"></div>
+            <GallinaIcon class="w-7 h-7 text-bosque animate-pulse select-none" />
+          </div>
+          <p class="text-sm font-bold text-verdoso">Consultando inventario de aves...</p>
+          <p class="text-xs text-verdoso-muted mt-1">Por favor, espere un momento mientras se actualiza el listado.</p>
         </div>
 
         <div v-else class="overflow-x-auto">

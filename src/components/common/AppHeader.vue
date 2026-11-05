@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   Home,
   Layers,
+  Egg,
   User,
   LogOut,
   Menu,
@@ -52,6 +53,12 @@ const navItems = [
     name: 'Inventario de Aves',
     to: '/aves',
     icon: Layers,
+    exact: false,
+  },
+  {
+    name: 'Producción',
+    to: '/produccion',
+    icon: Egg,
     exact: false,
   },
 ]
