@@ -16,6 +16,7 @@ import FloatingInput from '@/components/common/FloatingInput.vue'
 import FloatingSelect from '@/components/common/FloatingSelect.vue'
 import FormField from '@/components/common/FormField.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
+import InstalacionesStats from '@/components/instalaciones/InstalacionesStats.vue'
 
 // Iconos
 import {
@@ -207,11 +208,10 @@ const divisionErrors = ref({
 
 // Opciones de tipo de instalación alimentadas desde catálogo ctl_tipo_instalacion
 const tipoOptions = computed(() => {
-  const options = [{ value: '', label: '' }]
-  store.tiposInstalacion.forEach((t) => {
-    options.push({ value: t.nombre, label: t.nombre })
-  })
-  return options
+  return store.tiposInstalacion.map((t) => ({
+    value: t.nombre,
+    label: t.nombre,
+  }))
 })
 
 const formTipoOptions = computed(() => {
@@ -221,9 +221,8 @@ const formTipoOptions = computed(() => {
   }))
 })
 
-// Opciones de estado (Vacío por defecto, sin 'Todos los estados')
+// Opciones de estado (Vacío por defecto en selector, sin elemento vacío en desplegable)
 const estadoOptions = [
-  { value: '', label: '' },
   { value: 'true', label: 'Activa' },
   { value: 'false', label: 'Inactiva' },
 ]
@@ -467,24 +466,8 @@ const handleLogout = async () => {
         </p>
       </div>
 
-      <!-- Tarjetas de Estadísticas Reutilizables (StatCard - SOLID) -->
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <StatCard
-          title="Total Casitas"
-          :value="store.stats.total_casitas"
-        />
-
-        <StatCard
-          title="Total Divisiones"
-          :value="store.stats.total_divisiones"
-        />
-
-        <StatCard
-          title="Divisiones Habilitadas"
-          :value="store.stats.divisiones_activas"
-          value-color-class="text-bosque"
-        />
-      </div>
+      <!-- Estadísticas Reutilizables de Instalaciones (SOLID) -->
+      <InstalacionesStats :stats="store.stats" />
 
       <!-- Barra de Filtros Reutilizable con FilterBar Component (SOLID) -->
       <FilterBar

@@ -16,6 +16,7 @@ import FloatingInput from '@/components/common/FloatingInput.vue'
 import FloatingSelect from '@/components/common/FloatingSelect.vue'
 import FormField from '@/components/common/FormField.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
+import AvesStats from '@/components/aves/AvesStats.vue'
 
 // Iconos Lucide
 import {
@@ -99,19 +100,17 @@ const trasladoErrors = ref({
 
 // Opciones dinámicas alimentadas desde endpoints ctl_especie y ctl_sexo
 const especieFiltroOptions = computed(() => {
-  const options = [{ value: '', label: '' }]
-  avesStore.catalogos.especies.forEach((esp) => {
-    options.push({ value: String(esp.id), label: esp.nombre })
-  })
-  return options
+  return avesStore.catalogos.especies.map((esp) => ({
+    value: String(esp.id),
+    label: esp.nombre,
+  }))
 })
 
 const sexoFiltroOptions = computed(() => {
-  const options = [{ value: '', label: '' }]
-  avesStore.catalogos.sexos.forEach((s) => {
-    options.push({ value: String(s.id), label: s.nombre })
-  })
-  return options
+  return avesStore.catalogos.sexos.map((s) => ({
+    value: String(s.id),
+    label: s.nombre,
+  }))
 })
 
 const formEspecieOptions = computed(() => {
@@ -137,7 +136,6 @@ const formPropositoOptions = computed(() => {
 })
 
 const estadoFiltroOptions = [
-  { value: '', label: '' },
   { value: 'activa', label: 'Activas' },
   { value: 'salida', label: 'Bajas / Salidas' },
 ]
@@ -504,28 +502,8 @@ const handleLogout = async () => {
 
     <!-- Contenido Principal -->
     <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-      <!-- Tarjetas Métricas KPI Superiores (Sin rectángulos sombreados internos) -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          title="Total Población"
-          :value="avesStore.stats.total_aves || 14"
-        />
-
-        <StatCard
-          title="Gallinas Criollas"
-          :value="avesStore.stats.gallinas_count || 10"
-        />
-
-        <StatCard
-          title="Chompipes (Pavos)"
-          :value="avesStore.stats.chompipes_count || 2"
-        />
-
-        <StatCard
-          title="Patos Pichiches"
-          :value="avesStore.stats.patos_count || 2"
-        />
-      </div>
+      <!-- Estadísticas Reutilizables de Inventario de Aves (SOLID) -->
+      <AvesStats :stats="avesStore.stats" />
 
       <!-- Barra de Filtros Reutilizable con FilterBar Component (SOLID) -->
       <FilterBar
