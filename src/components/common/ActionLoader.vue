@@ -1,5 +1,5 @@
 <script setup>
-import { Bird } from 'lucide-vue-next'
+import GallinaIcon from '@/components/common/GallinaIcon.vue'
 
 defineProps({
   show: {
@@ -50,8 +50,8 @@ defineProps({
           <div class="relative w-16 h-16 flex items-center justify-center">
             <!-- Anillo exterior giratorio -->
             <div class="absolute inset-0 rounded-full border-4 border-borde border-t-[#244B36] border-r-[#6F9678] animate-spin"></div>
-            <!-- Ícono vectorial central corporativo con animación de pulso -->
-            <Bird class="w-7 h-7 text-bosque animate-pulse select-none" :stroke-width="2" />
+            <!-- Ícono vectorial de gallina corporativa con animación de pulso -->
+            <GallinaIcon class="w-8 h-8 text-bosque animate-pulse select-none" />
           </div>
 
           <!-- Textos de estado corporativos -->

@@ -17,6 +17,7 @@ import FloatingSelect from '@/components/common/FloatingSelect.vue'
 import FormField from '@/components/common/FormField.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
 import AvesStats from '@/components/aves/AvesStats.vue'
+import AppHeader from '@/components/common/AppHeader.vue'
 
 // Iconos Lucide
 import {
@@ -445,61 +446,8 @@ const handleLogout = async () => {
 
 <template>
   <div class="min-h-screen flex flex-col bg-crema text-verdoso">
-    <!-- Navbar Superior -->
-    <header class="bg-white border-b border-borde sticky top-0 z-30 shadow-xs">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        <div class="flex items-center gap-6">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-bosque text-white flex items-center justify-center font-bold text-lg shadow-sm">
-              🐔
-            </div>
-            <div>
-              <h1 class="text-base font-bold text-verdoso leading-tight">
-                Granja Avícola Inteligente
-              </h1>
-              <span class="text-xs text-salvia font-semibold">Inventario de Aves</span>
-            </div>
-          </div>
-
-          <nav class="hidden md:flex items-center gap-1">
-            <router-link
-              to="/"
-              class="px-3 py-2 text-sm font-medium rounded-lg text-verdoso-muted hover:text-verdoso hover:bg-crema flex items-center gap-1.5 transition-colors"
-            >
-              <LayoutDashboard class="w-4 h-4 text-salvia" /> Dashboard
-            </router-link>
-            <router-link
-              to="/instalaciones"
-              class="px-3 py-2 text-sm font-medium rounded-lg text-verdoso-muted hover:text-verdoso hover:bg-crema flex items-center gap-1.5 transition-colors"
-            >
-              <Home class="w-4 h-4 text-salvia" /> Instalaciones
-            </router-link>
-            <router-link
-              to="/aves"
-              class="px-3 py-2 text-sm font-semibold rounded-lg text-bosque bg-bosque-50 flex items-center gap-1.5 transition-colors"
-            >
-              <Layers class="w-4 h-4 text-bosque" /> Inventario de Aves
-            </router-link>
-          </nav>
-        </div>
-
-        <div class="flex items-center gap-4">
-          <div class="hidden sm:flex items-center gap-2 text-sm text-verdoso bg-crema px-3 py-1.5 rounded-full border border-borde">
-            <User class="w-4 h-4 text-salvia" />
-            <span class="font-medium">{{ authStore.user?.name || 'Administrador' }}</span>
-          </div>
-
-          <button
-            @click="handleLogout"
-            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold text-red-700 bg-red-50 hover:bg-red-100 rounded-lg transition-colors cursor-pointer"
-            title="Cerrar sesión"
-          >
-            <LogOut class="w-4 h-4" />
-            <span class="hidden sm:inline">Cerrar Sesión</span>
-          </button>
-        </div>
-      </div>
-    </header>
+    <!-- Navbar Superior Reutilizable (SOLID - Impeccable) -->
+    <AppHeader subtitle="Inventario de Aves" />
 
     <!-- Contenido Principal -->
     <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">

@@ -1,10 +1,8 @@
 <script setup>
 import { onMounted } from 'vue'
-import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import AppHeader from '@/components/common/AppHeader.vue'
 import {
-  LogOut,
-  User,
   CheckCircle2,
   ShieldCheck,
   Home,
@@ -14,7 +12,6 @@ import {
   Building,
 } from 'lucide-vue-next'
 
-const router = useRouter()
 const authStore = useAuthStore()
 
 onMounted(async () => {
@@ -22,70 +19,12 @@ onMounted(async () => {
     await authStore.fetchCurrentUser()
   }
 })
-
-const handleLogout = async () => {
-  await authStore.logout()
-  router.push({ name: 'login' })
-}
 </script>
 
 <template>
   <div class="min-h-screen flex flex-col bg-crema text-verdoso">
-    <!-- Navbar Superior -->
-    <header class="bg-white border-b border-borde sticky top-0 z-30 shadow-xs">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        <div class="flex items-center gap-6">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-bosque text-white flex items-center justify-center font-bold text-lg shadow-sm">
-              🐔
-            </div>
-            <div>
-              <h1 class="text-base font-bold text-verdoso leading-tight">
-                Granja Avícola Inteligente
-              </h1>
-              <span class="text-xs text-salvia font-semibold">Panel de Control</span>
-            </div>
-          </div>
-
-          <nav class="hidden md:flex items-center gap-1">
-            <router-link
-              to="/"
-              class="px-3 py-2 text-sm font-semibold rounded-lg text-bosque bg-bosque-50 flex items-center gap-1.5 transition-colors"
-            >
-              <LayoutDashboard class="w-4 h-4 text-bosque" /> Dashboard
-            </router-link>
-            <router-link
-              to="/instalaciones"
-              class="px-3 py-2 text-sm font-medium rounded-lg text-verdoso-muted hover:text-verdoso hover:bg-crema flex items-center gap-1.5 transition-colors"
-            >
-              <Home class="w-4 h-4 text-salvia" /> Instalaciones
-            </router-link>
-            <router-link
-              to="/aves"
-              class="px-3 py-2 text-sm font-medium rounded-lg text-verdoso-muted hover:text-verdoso hover:bg-crema flex items-center gap-1.5 transition-colors"
-            >
-              <Layers class="w-4 h-4 text-salvia" /> Inventario de Aves
-            </router-link>
-          </nav>
-        </div>
-
-        <div class="flex items-center gap-4">
-          <div class="hidden sm:flex items-center gap-2 text-sm text-verdoso bg-crema px-3 py-1.5 rounded-full border border-borde">
-            <User class="w-4 h-4 text-salvia" />
-            <span class="font-medium">{{ authStore.user?.name || 'Administrador' }}</span>
-          </div>
-
-          <button
-            @click="handleLogout"
-            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold text-red-700 bg-red-50 hover:bg-red-100 rounded-lg transition-colors cursor-pointer"
-            title="Cerrar sesión"
-          >
-            <LogOut class="w-4 h-4" />
-            <span class="hidden sm:inline">Cerrar Sesión</span>
-          </button>
-        </div>
-      </div>
-    </header>
+    <!-- Navbar Superior Reutilizable (SOLID - Impeccable) -->
+    <AppHeader subtitle="Panel de Control" />
 
     <!-- Contenido Principal -->
     <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
