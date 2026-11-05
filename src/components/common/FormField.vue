@@ -69,6 +69,14 @@ defineEmits(['update:modelValue', 'blur', 'enter', 'input'])
         <slot name="prefix" />
       </div>
 
+      <!-- Acción o ícono sufijo (ej. mostrar/ocultar contraseña) -->
+      <div
+        v-if="$slots.suffix"
+        class="absolute inset-y-0 right-0 pr-3 flex items-center text-salvia"
+      >
+        <slot name="suffix" />
+      </div>
+
       <!-- Modo Textarea -->
       <textarea
         v-if="type === 'textarea'"
@@ -128,7 +136,8 @@ defineEmits(['update:modelValue', 'blur', 'enter', 'input'])
         @keyup.enter="$emit('enter')"
         :class="[
           'block w-full py-2.5 rounded-xl text-sm text-verdoso bg-white outline-none transition-colors shadow-2xs',
-          $slots.prefix ? 'pl-10 pr-3.5' : 'px-3.5',
+          $slots.prefix ? 'pl-10' : 'pl-3.5',
+          $slots.suffix ? 'pr-10' : 'pr-3.5',
           error
             ? 'border-2 border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500'
             : 'border border-borde focus:border-bosque focus:ring-1 focus:ring-bosque placeholder:text-verdoso-muted/70',
