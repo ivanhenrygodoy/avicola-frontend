@@ -38,6 +38,7 @@ import {
   AlertTriangle,
   Calendar,
   Scale,
+  SearchX,
 } from 'lucide-vue-next'
 
 const router = useRouter()
@@ -577,9 +578,25 @@ const handleLogout = async () => {
             </thead>
 
             <tbody class="divide-y divide-borde">
+              <!-- Estado vacío mejorado (Empty State - Impeccable) -->
               <tr v-if="avesStore.aves.length === 0">
-                <td colspan="8" class="px-6 py-12 text-center text-verdoso-muted">
-                  No se encontraron aves con los criterios de búsqueda seleccionados.
+                <td colspan="8" class="px-6 py-14 text-center">
+                  <div class="max-w-xs mx-auto flex flex-col items-center gap-3">
+                    <div class="w-12 h-12 rounded-full bg-salvia-50 flex items-center justify-center text-salvia border border-borde">
+                      <SearchX class="w-6 h-6" />
+                    </div>
+                    <div class="space-y-1">
+                      <p class="text-sm font-bold text-verdoso">Sin resultados en el inventario</p>
+                      <p class="text-xs text-verdoso-muted">No se encontraron aves con los criterios de búsqueda seleccionados.</p>
+                    </div>
+                    <button
+                      type="button"
+                      @click="handleClear"
+                      class="mt-1 px-4 py-1.5 text-xs font-semibold text-bosque bg-salvia-50 hover:bg-salvia-100 rounded-full border border-salvia/40 transition-colors cursor-pointer"
+                    >
+                      Limpiar filtros
+                    </button>
+                  </div>
                 </td>
               </tr>
 
@@ -618,28 +635,29 @@ const handleLogout = async () => {
                   {{ ave.division?.casita?.nombre || 'Sin asignar' }}
                 </td>
 
-                <!-- Estado (Único con pill de color) -->
+                <!-- Estado (Único con pill de color y border semántico) -->
                 <td class="px-6 py-4">
                   <span
                     :class="[
-                      'inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold',
+                      'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border',
                       ave.estado === 'activa'
-                        ? 'bg-[#DDF3E3] text-bosque'
-                        : 'bg-red-100 text-red-800'
+                        ? 'bg-bosque-50 text-bosque border-bosque/20'
+                        : 'bg-red-50 text-red-700 border-red-200'
                     ]"
                   >
                     {{ ave.estado === 'activa' ? 'Activa' : 'Baja / Salida' }}
                   </span>
                 </td>
 
-                <!-- Acciones (Detalle 👁️, Historial 🕒, Trasladar ⇄, Lápiz ✏️, Basura 🗑️) -->
+                <!-- Acciones (Detalle 👁️, Historial 🕒, Trasladar ⇄, Lápiz ✏️, Basura 🗑️) con accesibilidad aria-label y toque ergonómico -->
                 <td class="px-6 py-4 text-right">
                   <div class="flex items-center justify-end gap-1.5 text-salvia">
                     <!-- Ojito: Ver Detalle Completo del Ave (Lectura) -->
                     <button
                       @click="openDetalle(ave)"
-                      class="p-1.5 hover:text-bosque hover:bg-salvia-50 rounded-lg transition-colors cursor-pointer"
+                      class="p-2 min-w-[34px] min-h-[34px] inline-flex items-center justify-center hover:text-bosque hover:bg-salvia-50 rounded-lg transition-colors cursor-pointer"
                       title="Ver detalle completo del ave"
+                      aria-label="Ver detalle completo del ave"
                     >
                       <Eye class="w-4 h-4" />
                     </button>
@@ -647,8 +665,9 @@ const handleLogout = async () => {
                     <!-- Historial: Ver Historial de Movimientos y Traslados -->
                     <button
                       @click="openMovimientos(ave)"
-                      class="p-1.5 hover:text-bosque hover:bg-salvia-50 rounded-lg transition-colors cursor-pointer"
+                      class="p-2 min-w-[34px] min-h-[34px] inline-flex items-center justify-center hover:text-bosque hover:bg-salvia-50 rounded-lg transition-colors cursor-pointer"
                       title="Ver historial de traslados"
+                      aria-label="Ver historial de traslados"
                     >
                       <History class="w-4 h-4" />
                     </button>
@@ -657,8 +676,9 @@ const handleLogout = async () => {
                     <button
                       v-if="ave.estado === 'activa'"
                       @click="openTraslado(ave)"
-                      class="p-1.5 hover:text-bosque hover:bg-[#DDF3E3] rounded-lg transition-colors cursor-pointer"
+                      class="p-2 min-w-[34px] min-h-[34px] inline-flex items-center justify-center hover:text-bosque hover:bg-bosque-50 rounded-lg transition-colors cursor-pointer"
                       title="Trasladar ave a otra división"
+                      aria-label="Trasladar ave a otra división"
                     >
                       <ArrowRightLeft class="w-4 h-4 text-bosque" />
                     </button>
@@ -666,8 +686,9 @@ const handleLogout = async () => {
                     <!-- Lápiz: Editar Ave -->
                     <button
                       @click="openEditAve(ave)"
-                      class="p-1.5 hover:text-tierra hover:bg-tierra-50 rounded-lg transition-colors cursor-pointer"
+                      class="p-2 min-w-[34px] min-h-[34px] inline-flex items-center justify-center hover:text-tierra hover:bg-tierra-50 rounded-lg transition-colors cursor-pointer"
                       title="Editar datos del ave"
+                      aria-label="Editar datos del ave"
                     >
                       <Pencil class="w-4 h-4" />
                     </button>
@@ -675,8 +696,9 @@ const handleLogout = async () => {
                     <!-- Basurero: Dar de baja -->
                     <button
                       @click="openDeleteAve(ave)"
-                      class="p-1.5 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                      class="p-2 min-w-[34px] min-h-[34px] inline-flex items-center justify-center hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
                       title="Dar de baja / eliminar ave"
+                      aria-label="Dar de baja / eliminar ave"
                     >
                       <Trash2 class="w-4 h-4" />
                     </button>

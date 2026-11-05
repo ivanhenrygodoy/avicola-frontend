@@ -34,6 +34,7 @@ import {
   Eye,
   Pencil,
   Trash2,
+  SearchX,
 } from 'lucide-vue-next'
 
 const router = useRouter()
@@ -531,12 +532,28 @@ const handleLogout = async () => {
               </tr>
             </thead>
             <tbody class="divide-y divide-borde/70">
+              <!-- Estado vacío mejorado (Empty State - Impeccable) -->
               <tr
                 v-if="store.casitas.length === 0"
                 class="hover:bg-crema/40 transition-colors"
               >
-                <td colspan="6" class="px-6 py-12 text-center text-verdoso-muted italic">
-                  No se encontraron casitas con los filtros aplicados.
+                <td colspan="6" class="px-6 py-14 text-center">
+                  <div class="max-w-xs mx-auto flex flex-col items-center gap-3">
+                    <div class="w-12 h-12 rounded-full bg-salvia-50 flex items-center justify-center text-salvia border border-borde">
+                      <SearchX class="w-6 h-6" />
+                    </div>
+                    <div class="space-y-1">
+                      <p class="text-sm font-bold text-verdoso">Sin resultados de casitas</p>
+                      <p class="text-xs text-verdoso-muted">No se encontraron casitas o galpones con los filtros aplicados.</p>
+                    </div>
+                    <button
+                      type="button"
+                      @click="handleClear"
+                      class="mt-1 px-4 py-1.5 text-xs font-semibold text-bosque bg-salvia-50 hover:bg-salvia-100 rounded-full border border-salvia/40 transition-colors cursor-pointer"
+                    >
+                      Limpiar filtros
+                    </button>
+                  </div>
                 </td>
               </tr>
 
@@ -568,30 +585,31 @@ const handleLogout = async () => {
                   {{ formatDate(casita.created_at) }}
                 </td>
 
-                <!-- Estado (Verde suave #DDF3E3 / Rojo suave #FEE2E2) -->
+                <!-- Estado (Verde suave / Rojo suave con border semántico) -->
                 <td class="px-6 py-4 text-center">
                   <button
                     @click="openToggleCasitaModal(casita)"
                     :title="casita.activa ? 'Clic para deshabilitar' : 'Clic para habilitar'"
                     :class="[
-                      'inline-block px-3 py-1 rounded-full text-xs font-semibold cursor-pointer transition-all',
+                      'inline-block px-3 py-1 rounded-full text-xs font-semibold cursor-pointer transition-all border',
                       casita.activa
-                        ? 'bg-[#DDF3E3] text-[#244B36] hover:bg-[#cbeed4]'
-                        : 'bg-[#FEE2E2] text-[#991B1B] hover:bg-[#fecaca]'
+                        ? 'bg-bosque-50 text-bosque border-bosque/20 hover:bg-bosque-100'
+                        : 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100'
                     ]"
                   >
                     {{ casita.activa ? 'Activa' : 'Inactiva' }}
                   </button>
                 </td>
 
-                <!-- Acciones (Ojito 👁️, Lápiz ✏️, Basura 🗑️) -->
+                <!-- Acciones (Ojito 👁️, Lápiz ✏️, Basura 🗑️) con aria-label y toque ergonómico -->
                 <td class="px-6 py-4 text-right">
-                  <div class="flex items-center justify-end gap-2 text-salvia">
+                  <div class="flex items-center justify-end gap-1.5 text-salvia">
                     <!-- Ojito: Ver Detalle y Divisiones -->
                     <button
                       @click="handleViewDetail(casita)"
-                      class="p-1.5 hover:text-bosque hover:bg-salvia-50 rounded-lg transition-colors cursor-pointer"
+                      class="p-2 min-w-[34px] min-h-[34px] inline-flex items-center justify-center hover:text-bosque hover:bg-salvia-50 rounded-lg transition-colors cursor-pointer"
                       title="Ver detalle y corrales"
+                      aria-label="Ver detalle y corrales de la casita"
                     >
                       <Eye class="w-4 h-4" />
                     </button>
@@ -599,8 +617,9 @@ const handleLogout = async () => {
                     <!-- Lápiz: Editar Casita -->
                     <button
                       @click="openEditCasita(casita)"
-                      class="p-1.5 hover:text-tierra hover:bg-tierra-50 rounded-lg transition-colors cursor-pointer"
+                      class="p-2 min-w-[34px] min-h-[34px] inline-flex items-center justify-center hover:text-tierra hover:bg-tierra-50 rounded-lg transition-colors cursor-pointer"
                       title="Editar casita"
+                      aria-label="Editar casita"
                     >
                       <Pencil class="w-4 h-4" />
                     </button>
@@ -608,8 +627,9 @@ const handleLogout = async () => {
                     <!-- Basurero: Eliminar Casita -->
                     <button
                       @click="requestDeleteCasita(casita)"
-                      class="p-1.5 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                      class="p-2 min-w-[34px] min-h-[34px] inline-flex items-center justify-center hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
                       title="Eliminar casita"
+                      aria-label="Eliminar casita"
                     >
                       <Trash2 class="w-4 h-4" />
                     </button>

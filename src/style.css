@@ -113,3 +113,40 @@ body {
   pointer-events: none;
   border-radius: 2px;
 }
+
+/* Superficies del Navegador (Craft Floor - Impeccable) */
+::selection {
+  background-color: #6F9678 !important;
+  color: #ffffff !important;
+}
+
+/* Scrollbars temáticos con la paleta corporativa */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F5F3EA;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #C4CCC6;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #6F9678;
+}
+
+/* Respeto estricto a preferencias de accesibilidad (WCAG 2.2) */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
