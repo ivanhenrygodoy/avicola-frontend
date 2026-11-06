@@ -23,6 +23,8 @@ export default {
         verdoso: '#26332B',
         'verdoso-muted': '#526359',
         borde: '#E4E7DF',
+        destructivo: '#B91C1C',
+        'destructivo-bg': '#FEF2F2',
       },
     },
   },
