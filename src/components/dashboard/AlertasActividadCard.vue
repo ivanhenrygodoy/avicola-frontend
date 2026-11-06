@@ -81,7 +81,7 @@ const ICONOS = {
           </li>
         </ul>
 
-        <!-- PaginationBar pinta todas las páginas: en pantallas angostas se desliza dentro de su propia franja -->
+        <!-- La barra puede ser más ancha que una pantalla angosta: se desliza dentro de su propia franja -->
         <div class="overflow-x-auto rounded-b-2xl">
           <PaginationBar
             :current-page="meta.current_page"

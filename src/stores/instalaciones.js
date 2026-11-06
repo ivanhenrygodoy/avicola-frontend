@@ -4,6 +4,7 @@ import * as instalacionesService from '@/services/instalaciones'
 export const useInstalacionesStore = defineStore('instalaciones', {
   state: () => ({
     casitas: [],
+    granjas: [],
     tiposInstalacion: [],
     meta: {
       current_page: 1,
@@ -31,6 +32,15 @@ export const useInstalacionesStore = defineStore('instalaciones', {
   }),
 
   actions: {
+    async fetchGranjas() {
+      try {
+        const data = await instalacionesService.getGranjas()
+        this.granjas = data || []
+      } catch (err) {
+        console.error('Error al cargar granjas:', err)
+      }
+    },
+
     async fetchTiposInstalacion() {
       try {
         const data = await instalacionesService.getTiposInstalacion()

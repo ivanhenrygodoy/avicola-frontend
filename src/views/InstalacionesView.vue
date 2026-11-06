@@ -1,221 +1,97 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
 import { useInstalacionesStore } from '@/stores/instalaciones'
-import { useNotificationStore } from '@/stores/notification'
 
 // Componentes comunes globales (SOLID)
-import BaseModal from '@/components/common/BaseModal.vue'
 import BaseConfirmModal from '@/components/common/BaseConfirmModal.vue'
 import ConfirmStatusModal from '@/components/common/ConfirmStatusModal.vue'
 import ActionLoader from '@/components/common/ActionLoader.vue'
-import PaginationBar from '@/components/common/PaginationBar.vue'
-import StatCard from '@/components/common/StatCard.vue'
-import FormField from '@/components/common/FormField.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
 import InstalacionesStats from '@/components/instalaciones/InstalacionesStats.vue'
 import AppHeader from '@/components/common/AppHeader.vue'
-import LoadingState from '@/components/common/LoadingState.vue'
-import EmptyState from '@/components/common/EmptyState.vue'
+import StatusBadge from '@/components/common/StatusBadge.vue'
+import RowActionButton from '@/components/common/RowActionButton.vue'
+import PageHeader from '@/components/common/PageHeader.vue'
+import DataTable from '@/components/common/DataTable.vue'
+import CasitaFormModal from '@/components/instalaciones/CasitaFormModal.vue'
+import DivisionFormModal from '@/components/instalaciones/DivisionFormModal.vue'
+import CasitaDetalleModal from '@/components/instalaciones/CasitaDetalleModal.vue'
+import { provideActionLoader } from '@/composables/useActionLoader'
+import { useConfirmAction } from '@/composables/useConfirmAction'
 import { formatDate } from '@/utils/format'
 
 // Iconos
-import {
-  Home,
-  Layers,
-  Plus,
-  CheckCircle2,
-  XCircle,
-  LogOut,
-  User,
-  LayoutDashboard,
-  Building,
-  Loader2,
-  Eye,
-  Pencil,
-  Trash2,
-} from 'lucide-vue-next'
+import { Layers, Eye, Pencil, Trash2 } from 'lucide-vue-next'
 
-const router = useRouter()
-const authStore = useAuthStore()
 const store = useInstalacionesStore()
-const notify = useNotificationStore()
+
+// Overlay de carga único de la vista; los modales y las confirmaciones lo reciben por inject
+const loader = provideActionLoader()
+const { isSubmitting, message: actionLoaderMessage } = loader
 
 // Modales
 const showDetailModal = ref(false)
 const showCasitaModal = ref(false)
+const casitaSeleccionada = ref(null)
 const showDivisionModal = ref(false)
-const isEditingCasita = ref(false)
-const isSubmitting = ref(false)
+const idCasitaParaDivision = ref(null)
 
-// Modal de Confirmación de Estado Dinámico (Habilitar / Deshabilitar)
-const showStatusModal = ref(false)
-const statusTarget = ref(null) // { type: 'casita' | 'division', item: object }
-const isStatusLoading = ref(false)
+// Confirmación de cambio de estado (habilitar / deshabilitar) de una casita o un corral
+const estado = useConfirmAction({
+  mensajeCarga: ({ type, item }) => `${item.activa ? 'Deshabilitando' : 'Habilitando'} ${type === 'casita' ? 'casita' : 'corral'}...`,
+  accion: ({ type, item }) => (type === 'casita' ? store.toggleCasita(item.id) : store.toggleDivision(item.id)),
+  // El texto usa el estado ANTERIOR del objetivo: el mismo que el usuario vio al confirmar
+  mensajeExito: ({ item }) => (item.activa ? 'Instalación deshabilitada correctamente.' : 'Instalación habilitada correctamente.'),
+  mensajeError: 'Error al cambiar estado de la instalación.',
+  loader, // esta vista provee el loader: se pasa explícito (no se puede inyectar a sí misma)
+})
 
-// Modal de Confirmación de Eliminación (SOLID)
-const showDeleteModal = ref(false)
-const deleteTarget = ref(null) // { type: 'casita' | 'division', item: object }
-const isDeleteLoading = ref(false)
-
-// Loader Global de Acciones (Colores corporativos Verde Bosque / Salvia)
-const showActionLoader = ref(false)
-const actionLoaderMessage = ref('Procesando acción...')
-
-// Computadas para Modal Dinámico de Estado
-const isTargetActive = computed(() => Boolean(statusTarget.value?.item?.activa))
-const targetTypeLabel = computed(() => statusTarget.value?.type === 'casita' ? 'casita' : 'corral')
-const targetTypeName = computed(() => statusTarget.value?.type === 'casita' ? 'la casita' : 'el corral')
+const isTargetActive = computed(() => Boolean(estado.target.value?.item?.activa))
+const targetTypeLabel = computed(() => (estado.target.value?.type === 'casita' ? 'casita' : 'corral'))
+const targetTypeName = computed(() => (estado.target.value?.type === 'casita' ? 'la casita' : 'el corral'))
 
 const statusModalTitle = computed(() => {
-  if (!statusTarget.value?.item) return ''
-  const action = isTargetActive.value ? 'Deshabilitar' : 'Habilitar'
-  return `${action} ${targetTypeLabel.value}: ${statusTarget.value.item.nombre}`
+  if (!estado.target.value?.item) return ''
+  return `${isTargetActive.value ? 'Deshabilitar' : 'Habilitar'} ${targetTypeLabel.value}: ${estado.target.value.item.nombre}`
 })
-
 const statusModalQuestion = computed(() => {
-  if (!statusTarget.value?.item) return ''
-  const action = isTargetActive.value ? 'deshabilitar' : 'habilitar'
-  return `¿Desea ${action} ${targetTypeName.value} "${statusTarget.value.item.nombre}"?`
+  if (!estado.target.value?.item) return ''
+  return `¿Desea ${isTargetActive.value ? 'deshabilitar' : 'habilitar'} ${targetTypeName.value} "${estado.target.value.item.nombre}"?`
 })
-
 const statusModalDescription = computed(() => {
-  if (!statusTarget.value?.item) return ''
-  const newStatus = isTargetActive.value ? 'inactiva' : 'activa'
-  return `Se cambiará el estado de ${targetTypeName.value} seleccionada a ${newStatus}.`
+  if (!estado.target.value?.item) return ''
+  return `Se cambiará el estado de ${targetTypeName.value} seleccionada a ${isTargetActive.value ? 'inactiva' : 'activa'}.`
 })
-
 const statusConfirmText = computed(() => (isTargetActive.value ? 'Deshabilitar' : 'Habilitar'))
-const statusIsDestructive = computed(() => isTargetActive.value)
 
-const openToggleCasitaModal = (casita) => {
-  statusTarget.value = { type: 'casita', item: casita }
-  showStatusModal.value = true
-}
+const openToggleCasitaModal = (casita) => estado.request({ type: 'casita', item: casita })
+const openToggleDivisionModal = (division) => estado.request({ type: 'division', item: division })
 
-const openToggleDivisionModal = (division) => {
-  statusTarget.value = { type: 'division', item: division }
-  showStatusModal.value = true
-}
+// Confirmación de eliminación de una casita o un corral
+const eliminar = useConfirmAction({
+  mensajeCarga: ({ type }) => (type === 'casita' ? 'Eliminando casita...' : 'Eliminando corral...'),
+  accion: ({ type, item }) => (type === 'casita' ? store.removeCasita(item.id) : store.removeDivision(item.id)),
+  mensajeExito: ({ type }) => (type === 'casita' ? 'Casita eliminada correctamente.' : 'Corral eliminado correctamente.'),
+  mensajeError: 'No se pudo eliminar el registro.',
+  loader,
+})
 
-// Computadas y acciones para Eliminación
 const deleteModalQuestion = computed(() => {
-  if (!deleteTarget.value?.item) return ''
-  const entity = deleteTarget.value.type === 'casita' ? 'la casita' : 'el corral'
-  return `¿Deseas eliminar ${entity} "${deleteTarget.value.item.nombre}"?`
+  if (!eliminar.target.value?.item) return ''
+  const entidad = eliminar.target.value.type === 'casita' ? 'la casita' : 'el corral'
+  return `¿Deseas eliminar ${entidad} "${eliminar.target.value.item.nombre}"?`
 })
+const deleteModalDescription = computed(() =>
+  eliminar.target.value?.type === 'casita'
+    ? 'Al confirmar la acción, los cambios no podrán revertirse. La casita solo podrá eliminarse si no contiene divisiones asociadas.'
+    : 'Al confirmar la acción, los cambios no podrán revertirse.',
+)
 
-const deleteModalDescription = computed(() => {
-  if (deleteTarget.value?.type === 'casita') {
-    return 'Al confirmar la acción, los cambios no podrán revertirse. La casita solo podrá eliminarse si no contiene divisiones asociadas.'
-  }
-  return 'Al confirmar la acción, los cambios no podrán revertirse.'
-})
-
-const requestDeleteCasita = (casita) => {
-  deleteTarget.value = { type: 'casita', item: casita }
-  showDeleteModal.value = true
-}
-
-const requestDeleteDivision = (division) => {
-  deleteTarget.value = { type: 'division', item: division }
-  showDeleteModal.value = true
-}
-
-const handleConfirmDelete = async () => {
-  if (!deleteTarget.value?.item) return
-  isDeleteLoading.value = true
-  actionLoaderMessage.value = deleteTarget.value.type === 'casita'
-    ? 'Eliminando casita...'
-    : 'Eliminando corral...'
-  showActionLoader.value = true
-
-  try {
-    if (deleteTarget.value.type === 'casita') {
-      await store.removeCasita(deleteTarget.value.item.id)
-      notify.success('Casita eliminada correctamente.')
-    } else {
-      await store.removeDivision(deleteTarget.value.item.id)
-      notify.success('Corral eliminado correctamente.')
-    }
-    showDeleteModal.value = false
-  } catch (err) {
-    console.error('Error al eliminar:', err)
-    const msg = err.response?.data?.message || 'No se pudo eliminar el registro.'
-    if (err.response?.status === 422) {
-      notify.warning(msg)
-    } else {
-      notify.error(msg)
-    }
-  } finally {
-    isDeleteLoading.value = false
-    showActionLoader.value = false
-  }
-}
-
-const handleConfirmStatus = async () => {
-  if (!statusTarget.value?.item) return
-  isStatusLoading.value = true
-  actionLoaderMessage.value = isTargetActive.value
-    ? `Deshabilitando ${targetTypeLabel.value}...`
-    : `Habilitando ${targetTypeLabel.value}...`
-  showActionLoader.value = true
-
-  try {
-    if (statusTarget.value.type === 'casita') {
-      await store.toggleCasita(statusTarget.value.item.id)
-    } else {
-      await store.toggleDivision(statusTarget.value.item.id)
-    }
-    notify.success(isTargetActive.value ? 'Instalación deshabilitada correctamente.' : 'Instalación habilitada correctamente.')
-    showStatusModal.value = false
-  } catch (err) {
-    console.error('Error al cambiar estado:', err)
-    const msg = err.response?.data?.message || 'Error al cambiar estado de la instalación.'
-    if (err.response?.status === 422) {
-      notify.warning(msg)
-    } else {
-      notify.error(msg)
-    }
-  } finally {
-    isStatusLoading.value = false
-    showActionLoader.value = false
-  }
-}
-
-// Formularios
-const casitaForm = ref({
-  id: null,
-  id_granja: 1,
-  nombre: '',
-  tipo: 'Gallinero',
-  descripcion: '',
-})
-
-const casitaErrors = ref({
-  nombre: '',
-})
-
-const divisionForm = ref({
-  id_casita: null,
-  nombre: '',
-  descripcion: '',
-})
-
-const divisionErrors = ref({
-  nombre: '',
-})
+const requestDeleteCasita = (casita) => eliminar.request({ type: 'casita', item: casita })
+const requestDeleteDivision = (division) => eliminar.request({ type: 'division', item: division })
 
 // Opciones de tipo de instalación alimentadas desde catálogo ctl_tipo_instalacion
 const tipoOptions = computed(() => {
-  return store.tiposInstalacion.map((t) => ({
-    value: t.nombre,
-    label: t.nombre,
-  }))
-})
-
-const formTipoOptions = computed(() => {
   return store.tiposInstalacion.map((t) => ({
     value: t.nombre,
     label: t.nombre,
@@ -228,6 +104,16 @@ const estadoOptions = [
   { value: 'false', label: 'Inactiva' },
 ]
 
+// Columnas de la tabla (DataTable la dibuja); cada celda se personaliza con su slot #cell-<key>
+const columnas = [
+  { key: 'nombre', label: 'Casita / Galpón', cellClass: 'text-verdoso' },
+  { key: 'tipo', label: 'Tipo de instalación', cellClass: 'text-verdoso' },
+  { key: 'corrales', label: 'Corrales / Divisiones' },
+  { key: 'fecha', label: 'Fecha de registro', cellClass: 'text-verdoso-muted text-xs' },
+  { key: 'estado', label: 'Estado', align: 'center' },
+  { key: 'acciones', label: 'Acciones', align: 'right' },
+]
+
 // Configuración de la barra de filtros (FilterBar la dibuja)
 const filterFields = computed(() => [
   { key: 'buscar', type: 'search', label: 'Buscar' },
@@ -237,6 +123,7 @@ const filterFields = computed(() => [
 
 onMounted(async () => {
   await Promise.all([
+    store.fetchGranjas(),
     store.fetchTiposInstalacion(),
     store.fetchCasitas(),
   ])
@@ -267,129 +154,21 @@ const handleViewDetail = (casita) => {
   showDetailModal.value = true
 }
 
-// Crear / Editar Casita
+// Crear / Editar Casita (null = crear)
 const openCreateCasita = () => {
-  isEditingCasita.value = false
-  casitaErrors.value = { nombre: '' }
-  casitaForm.value = {
-    id: null,
-    id_granja: 1,
-    nombre: '',
-    tipo: 'Gallinero',
-    descripcion: '',
-  }
+  casitaSeleccionada.value = null
   showCasitaModal.value = true
 }
 
 const openEditCasita = (casita) => {
-  isEditingCasita.value = true
-  casitaErrors.value = { nombre: '' }
-  casitaForm.value = {
-    id: casita.id,
-    id_granja: casita.id_granja || 1,
-    nombre: casita.nombre,
-    tipo: casita.tipo,
-    descripcion: casita.descripcion || '',
-  }
+  casitaSeleccionada.value = casita
   showCasitaModal.value = true
 }
 
-const handleSubmitCasita = async () => {
-  casitaErrors.value.nombre = ''
-  if (!casitaForm.value.nombre || !casitaForm.value.nombre.trim()) {
-    casitaErrors.value.nombre = 'El nombre de la casita es obligatorio'
-    return
-  }
-
-  isSubmitting.value = true
-  actionLoaderMessage.value = isEditingCasita.value ? 'Guardando cambios en la casita...' : 'Creando nueva casita...'
-  showActionLoader.value = true
-
-  try {
-    if (isEditingCasita.value) {
-      await store.updateCasita(casitaForm.value.id, {
-        nombre: casitaForm.value.nombre.trim(),
-        tipo: casitaForm.value.tipo,
-        descripcion: casitaForm.value.descripcion || '',
-      })
-      notify.success('Casita actualizada exitosamente.')
-    } else {
-      await store.addCasita({
-        id_granja: casitaForm.value.id_granja || 1,
-        nombre: casitaForm.value.nombre.trim(),
-        tipo: casitaForm.value.tipo,
-        descripcion: casitaForm.value.descripcion || '',
-      })
-      notify.success('Casita creada exitosamente.')
-    }
-    showCasitaModal.value = false
-  } catch (err) {
-    console.error('Error al guardar la casita:', err)
-    const msg = err.response?.data?.message || 'Error al guardar la casita.'
-    if (err.response?.status === 422) {
-      if (err.response?.data?.errors?.nombre) {
-        casitaErrors.value.nombre = err.response.data.errors.nombre[0]
-      }
-      notify.warning(msg)
-    } else {
-      notify.error(msg)
-    }
-  } finally {
-    isSubmitting.value = false
-    showActionLoader.value = false
-  }
-}
-
-// Agregar Corral / División
-const openAddDivision = (idCasita) => {
-  divisionErrors.value = { nombre: '' }
-  divisionForm.value = {
-    id_casita: idCasita,
-    nombre: '',
-    descripcion: '',
-  }
+// Agregar Corral desde la ficha de una casita
+const openAddDivision = (casita) => {
+  idCasitaParaDivision.value = casita.id
   showDivisionModal.value = true
-}
-
-const handleSubmitDivision = async () => {
-  divisionErrors.value.nombre = ''
-  if (!divisionForm.value.nombre || !divisionForm.value.nombre.trim()) {
-    divisionErrors.value.nombre = 'El nombre del corral es obligatorio'
-    return
-  }
-
-  isSubmitting.value = true
-  actionLoaderMessage.value = 'Guardando nuevo corral...'
-  showActionLoader.value = true
-
-  try {
-    await store.addDivision({
-      id_casita: divisionForm.value.id_casita,
-      nombre: divisionForm.value.nombre.trim(),
-      descripcion: divisionForm.value.descripcion || '',
-    })
-    notify.success('Corral agregado exitosamente.')
-    showDivisionModal.value = false
-  } catch (err) {
-    console.error('Error al guardar corral:', err)
-    const msg = err.response?.data?.message || 'Error al guardar el corral.'
-    if (err.response?.status === 422) {
-      if (err.response?.data?.errors?.nombre) {
-        divisionErrors.value.nombre = err.response.data.errors.nombre[0]
-      }
-      notify.warning(msg)
-    } else {
-      notify.error(msg)
-    }
-  } finally {
-    isSubmitting.value = false
-    showActionLoader.value = false
-  }
-}
-
-const handleLogout = async () => {
-  await authStore.logout()
-  router.push({ name: 'login' })
 }
 </script>
 
@@ -401,14 +180,11 @@ const handleLogout = async () => {
     <!-- Contenido Principal -->
     <main class="flex-1 max-w-[1600px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       <!-- Título Central Corporativo (#26332B) -->
-      <div class="text-center pt-2 pb-1">
-        <h2 class="text-2xl sm:text-3xl font-extrabold text-verdoso tracking-tight">
-          Gestión de casitas y corrales
-        </h2>
-        <p class="text-xs sm:text-sm text-verdoso-muted mt-1">
-          Administración de galpones, tipos de instalación y corrales independientes
-        </p>
-      </div>
+      <PageHeader
+        title="Gestión de casitas y corrales"
+        subtitle="Administración de galpones, tipos de instalación y corrales independientes"
+        align="center"
+      />
 
       <!-- Estadísticas Reutilizables de Instalaciones (SOLID) -->
       <InstalacionesStats :stats="store.stats" />
@@ -425,376 +201,105 @@ const handleLogout = async () => {
       />
 
       <!-- Tabla de Listado -->
-      <div class="bg-white rounded-2xl border border-borde shadow-xs overflow-hidden">
-        <LoadingState v-if="store.loading" />
+      <DataTable
+        :columns="columnas"
+        :rows="store.casitas"
+        :loading="store.loading"
+        :meta="store.meta"
+        item-label="casitas"
+        empty-title="Sin resultados de casitas"
+        empty-description="No se encontraron casitas o galpones con los filtros aplicados."
+        empty-action-label="Limpiar filtros"
+        @empty-action="handleClear"
+        @update:page="handlePageChange"
+        @update:per-page="handlePerPageChange"
+      >
+        <template #cell-nombre="{ row }">{{ row.nombre }}</template>
 
-        <div v-else class="overflow-x-auto">
-          <table class="w-full text-left text-sm">
-            <thead class="bg-crema/60 border-b border-borde text-verdoso font-bold text-xs uppercase tracking-wider">
-              <tr>
-                <th scope="col" class="px-6 py-4">Casita / Galpón</th>
-                <th scope="col" class="px-6 py-4">Tipo de instalación</th>
-                <th scope="col" class="px-6 py-4">Corrales / Divisiones</th>
-                <th scope="col" class="px-6 py-4">Fecha de registro</th>
-                <th scope="col" class="px-6 py-4 text-center">Estado</th>
-                <th scope="col" class="px-6 py-4 text-right">Acciones</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-borde/70">
-              <!-- Estado vacío mejorado (Empty State - Impeccable) -->
-              <tr
-                v-if="store.casitas.length === 0"
-                class="hover:bg-crema/40 transition-colors"
-              >
-                <td colspan="6" class="px-6 py-14 text-center">
-                  <EmptyState
-                    title="Sin resultados de casitas"
-                    description="No se encontraron casitas o galpones con los filtros aplicados."
-                    action-label="Limpiar filtros"
-                    @action="handleClear"
-                  />
-                </td>
-              </tr>
+        <template #cell-tipo="{ row }">{{ row.tipo || 'General' }}</template>
 
-              <tr
-                v-for="casita in store.casitas"
-                :key="casita.id"
-                class="hover:bg-crema/30 transition-colors"
-              >
-                <!-- Nombre de Casita (Solo nombre, sin leyenda secundaria) -->
-                <td class="px-6 py-4">
-                  <div class="text-verdoso">{{ casita.nombre }}</div>
-                </td>
+        <template #cell-corrales="{ row }">
+          <StatusBadge variant="outline">
+            <Layers class="w-3.5 h-3.5 text-salvia" />
+            {{ row.divisiones?.length || 0 }} {{ row.divisiones?.length === 1 ? 'corral' : 'corrales' }}
+          </StatusBadge>
+        </template>
 
-                <!-- Tipo -->
-                <td class="px-6 py-4 text-verdoso">
-                  {{ casita.tipo || 'General' }}
-                </td>
+        <template #cell-fecha="{ row }">{{ formatDate(row.created_at) }}</template>
 
-                <!-- Cantidad de Corrales -->
-                <td class="px-6 py-4">
-                  <span class="inline-flex items-center gap-1.5 text-xs text-verdoso bg-crema px-2.5 py-1 rounded-full border border-borde">
-                    <Layers class="w-3.5 h-3.5 text-salvia" />
-                    {{ casita.divisiones?.length || 0 }} {{ casita.divisiones?.length === 1 ? 'corral' : 'corrales' }}
-                  </span>
-                </td>
+        <template #cell-estado="{ row }">
+          <StatusBadge
+            as="button"
+            :variant="row.activa ? 'success' : 'danger'"
+            :title="row.activa ? 'Clic para deshabilitar' : 'Clic para habilitar'"
+            @click="openToggleCasitaModal(row)"
+          >
+            {{ row.activa ? 'Activa' : 'Inactiva' }}
+          </StatusBadge>
+        </template>
 
-                <!-- Fecha de Registro -->
-                <td class="px-6 py-4 text-verdoso-muted text-xs">
-                  {{ formatDate(casita.created_at) }}
-                </td>
-
-                <!-- Estado (Verde suave / Rojo suave con border semántico) -->
-                <td class="px-6 py-4 text-center">
-                  <button
-                    @click="openToggleCasitaModal(casita)"
-                    :title="casita.activa ? 'Clic para deshabilitar' : 'Clic para habilitar'"
-                    :class="[
-                      'inline-block px-3 py-1 rounded-full text-xs cursor-pointer transition-all border',
-                      casita.activa
-                        ? 'bg-bosque-50 text-bosque border-bosque/20 hover:bg-bosque-100'
-                        : 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100'
-                    ]"
-                  >
-                    {{ casita.activa ? 'Activa' : 'Inactiva' }}
-                  </button>
-                </td>
-
-                <!-- Acciones (Ojito 👁️, Lápiz ✏️, Basura 🗑️) con aria-label y toque ergonómico -->
-                <td class="px-6 py-4 text-right">
-                  <div class="flex items-center justify-end gap-1.5 text-salvia">
-                    <!-- Ojito: Ver Detalle y Divisiones -->
-                    <button
-                      @click="handleViewDetail(casita)"
-                      class="p-2 min-w-[34px] min-h-[34px] inline-flex items-center justify-center hover:text-bosque hover:bg-salvia-50 rounded-lg transition-colors cursor-pointer"
-                      title="Ver detalle y corrales"
-                      aria-label="Ver detalle y corrales de la casita"
-                    >
-                      <Eye class="w-4 h-4" />
-                    </button>
-
-                    <!-- Lápiz: Editar Casita -->
-                    <button
-                      @click="openEditCasita(casita)"
-                      class="p-2 min-w-[34px] min-h-[34px] inline-flex items-center justify-center hover:text-tierra hover:bg-tierra-50 rounded-lg transition-colors cursor-pointer"
-                      title="Editar casita"
-                      aria-label="Editar casita"
-                    >
-                      <Pencil class="w-4 h-4" />
-                    </button>
-
-                    <!-- Basurero: Eliminar Casita -->
-                    <button
-                      @click="requestDeleteCasita(casita)"
-                      class="p-2 min-w-[34px] min-h-[34px] inline-flex items-center justify-center hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                      title="Eliminar casita"
-                      aria-label="Eliminar casita"
-                    >
-                      <Trash2 class="w-4 h-4" />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- Barra de Paginación Reutilizable (PaginationBar - SOLID) -->
-        <PaginationBar
-          :current-page="store.meta.current_page"
-          :last-page="store.meta.last_page"
-          :per-page="store.meta.per_page"
-          :total="store.meta.total"
-          item-label="casitas"
-          @update:page="handlePageChange"
-          @update:per-page="handlePerPageChange"
-        />
-      </div>
+        <template #cell-acciones="{ row }">
+          <div class="flex items-center justify-end gap-1.5">
+            <RowActionButton :icon="Eye" title="Ver detalle y corrales de la casita" @click="handleViewDetail(row)" />
+            <RowActionButton :icon="Pencil" tone="edit" title="Editar casita" @click="openEditCasita(row)" />
+            <RowActionButton :icon="Trash2" tone="danger" title="Eliminar casita" @click="requestDeleteCasita(row)" />
+          </div>
+        </template>
+      </DataTable>
     </main>
 
-    <!-- Modal Detalle (El Ojito 👁️) Usando BaseModal Reutilizable -->
-    <BaseModal
-      :is-open="showDetailModal && !!store.selectedCasita"
-      max-width="2xl"
+    <!-- Ficha de la casita con sus corrales (solo presentación: emite eventos) -->
+    <CasitaDetalleModal
+      :is-open="showDetailModal"
+      :casita="store.selectedCasita"
       @close="showDetailModal = false"
-    >
-      <template #header>
-        <div>
-          <div class="flex items-center gap-2">
-            <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-salvia/20 text-bosque">
-              {{ store.selectedCasita?.tipo || 'Galpón' }}
-            </span>
-            <span
-              :class="[
-                'px-2 py-0.5 rounded-full text-xs font-semibold',
-                store.selectedCasita?.activa ? 'bg-[#DDF3E3] text-bosque' : 'bg-[#FEE2E2] text-red-800'
-              ]"
-            >
-              {{ store.selectedCasita?.activa ? 'Activa' : 'Inactiva' }}
-            </span>
-          </div>
-          <h3 class="text-xl font-bold text-verdoso mt-1">
-            {{ store.selectedCasita?.nombre }}
-          </h3>
-          <p class="text-xs text-verdoso-muted mt-0.5">
-            {{ store.selectedCasita?.descripcion || 'Sin descripción detallada' }}
-          </p>
-        </div>
-      </template>
+      @add-division="openAddDivision"
+      @toggle-division="openToggleDivisionModal"
+      @delete-division="requestDeleteDivision"
+    />
 
-      <!-- Listado de Divisiones / Corrales -->
-      <div class="space-y-3">
-        <div class="flex items-center justify-between">
-          <h4 class="text-xs font-bold text-salvia uppercase tracking-wider">
-            Corrales y Divisiones Asociadas ({{ store.selectedCasita?.divisiones?.length || 0 }})
-          </h4>
-          <button
-            @click="openAddDivision(store.selectedCasita.id)"
-            class="px-3 py-1.5 btn-principal text-xs flex items-center gap-1"
-          >
-            <Plus class="w-3.5 h-3.5" /> Agregar Corral
-          </button>
-        </div>
-
-        <div
-          v-if="!store.selectedCasita?.divisiones || store.selectedCasita?.divisiones.length === 0"
-          class="p-8 text-center text-verdoso-muted italic bg-crema rounded-xl border border-dashed border-borde text-xs"
-        >
-          No hay corrales registrados en esta casita. Puedes agregar el primero con el botón superior.
-        </div>
-
-        <div
-          v-for="div in store.selectedCasita?.divisiones"
-          :key="div.id"
-          class="p-4 rounded-xl border border-borde bg-white hover:border-salvia transition-all flex items-center justify-between gap-4 shadow-2xs"
-        >
-          <div>
-            <div class="flex items-center gap-2">
-              <p class="text-sm font-bold text-verdoso">{{ div.nombre }}</p>
-              <span class="text-xs text-salvia font-mono">#{{ div.id }}</span>
-            </div>
-            <p class="text-xs text-verdoso-muted mt-1">
-              {{ div.descripcion || 'Espacio físico asignado para albergue de aves' }}
-            </p>
-          </div>
-
-          <div class="flex items-center gap-2">
-            <button
-              @click="openToggleDivisionModal(div)"
-              :class="[
-                'px-3 py-1 text-xs font-semibold rounded-full transition-colors flex items-center gap-1 cursor-pointer',
-                div.activa
-                  ? 'bg-[#DDF3E3] text-bosque hover:bg-[#cbeed4]'
-                  : 'bg-crema text-verdoso-muted hover:bg-borde'
-              ]"
-              :title="div.activa ? 'Clic para deshabilitar corral' : 'Clic para habilitar corral'"
-            >
-              <component :is="div.activa ? CheckCircle2 : XCircle" class="w-3.5 h-3.5" />
-              <span>{{ div.activa ? 'Habilitado' : 'Inactivo' }}</span>
-            </button>
-
-            <button
-              @click="requestDeleteDivision(div)"
-              class="p-1.5 text-salvia hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-              title="Eliminar división"
-            >
-              <Trash2 class="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Footer centrado -->
-      <template #footer>
-        <button
-          type="button"
-          @click="showDetailModal = false"
-          class="px-6 py-2 btn-secundario text-sm"
-        >
-          Cerrar
-        </button>
-      </template>
-    </BaseModal>
-
-    <!-- Modal: Crear / Editar Casita (BaseModal con botones centrados) -->
-    <BaseModal
+    <!-- Modales de formulario (estado propio) -->
+    <CasitaFormModal
       :is-open="showCasitaModal"
-      :title="isEditingCasita ? 'Editar Casita' : 'Crear Nueva Casita'"
-      max-width="md"
+      :casita="casitaSeleccionada"
       @close="showCasitaModal = false"
-    >
-      <form id="casita-form" @submit.prevent="handleSubmitCasita" class="space-y-4" novalidate>
-        <FormField
-          id="casita-nombre"
-          v-model="casitaForm.nombre"
-          label="Nombre de la Casita"
-          placeholder="Ej. Casita 4"
-          required
-          :error="casitaErrors.nombre"
-          @input="casitaErrors.nombre = ''"
-        />
+    />
 
-        <FormField
-          id="casita-tipo"
-          v-model="casitaForm.tipo"
-          type="select"
-          label="Tipo de Instalación"
-          :options="formTipoOptions"
-        />
-
-        <FormField
-          id="casita-descripcion"
-          v-model="casitaForm.descripcion"
-          type="textarea"
-          label="Descripción"
-          placeholder="Detalles constructivos, ubicación física..."
-          :rows="3"
-        />
-      </form>
-
-      <!-- Botones del modal CENTRADOS (SOLID) -->
-      <template #footer>
-        <div class="flex items-center justify-center gap-3 w-full">
-          <button
-            type="button"
-            @click="showCasitaModal = false"
-            class="px-6 py-2 btn-secundario text-sm"
-          >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            @click="handleSubmitCasita"
-            :disabled="isSubmitting"
-            class="px-6 py-2 btn-principal text-sm shadow-xs flex items-center gap-1.5"
-          >
-            <Loader2 v-if="isSubmitting" class="w-4 h-4 animate-spin" />
-            <span>{{ isEditingCasita ? 'Guardar Cambios' : 'Crear Casita' }}</span>
-          </button>
-        </div>
-      </template>
-    </BaseModal>
-
-    <!-- Modal: Nueva División (Dentro de una Casita) -->
-    <BaseModal
+    <DivisionFormModal
       :is-open="showDivisionModal"
-      title="Agregar Corral a la Casita"
-      max-width="md"
+      :id-casita="idCasitaParaDivision"
       @close="showDivisionModal = false"
-    >
-      <form id="division-form" @submit.prevent="handleSubmitDivision" class="space-y-4" novalidate>
-        <FormField
-          id="division-nombre"
-          v-model="divisionForm.nombre"
-          label="Nombre del Corral"
-          placeholder="Ej. División 3 o Espacio Cuarentena"
-          required
-          :error="divisionErrors.nombre"
-          @input="divisionErrors.nombre = ''"
-        />
+    />
 
-        <FormField
-          id="division-descripcion"
-          v-model="divisionForm.descripcion"
-          type="textarea"
-          label="Descripción"
-          placeholder="Especies admitidas, condiciones físicas..."
-          :rows="3"
-        />
-      </form>
-
-      <!-- Botones del modal CENTRADOS (SOLID) -->
-      <template #footer>
-        <div class="flex items-center justify-center gap-3 w-full">
-          <button
-            type="button"
-            @click="showDivisionModal = false"
-            class="px-6 py-2 btn-secundario text-sm"
-          >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            @click="handleSubmitDivision"
-            :disabled="isSubmitting"
-            class="px-6 py-2 btn-principal text-sm shadow-xs flex items-center gap-1.5"
-          >
-            <Loader2 v-if="isSubmitting" class="w-4 h-4 animate-spin" />
-            <span>Guardar Corral</span>
-          </button>
-        </div>
-      </template>
-    </BaseModal>
-
-    <!-- Modal Dinámico de Confirmación de Cambio de Estado (Habilitar / Deshabilitar) -->
+    <!-- Confirmación de cambio de estado (habilitar / deshabilitar) -->
     <ConfirmStatusModal
-      :is-open="showStatusModal"
+      :is-open="estado.isOpen.value"
       :title="statusModalTitle"
       :question="statusModalQuestion"
       :description="statusModalDescription"
       :confirm-text="statusConfirmText"
-      :is-destructive="statusIsDestructive"
-      :loading="isStatusLoading"
-      @confirm="handleConfirmStatus"
-      @close="showStatusModal = false"
+      :is-destructive="isTargetActive"
+      :loading="estado.loading.value"
+      @confirm="estado.confirm"
+      @close="estado.cancel"
     />
 
-    <!-- Modal Dinámico de Confirmación de Eliminación (SOLID - Reutilizable) -->
+    <!-- Confirmación de eliminación -->
     <BaseConfirmModal
-      :is-open="showDeleteModal"
+      :is-open="eliminar.isOpen.value"
       :question="deleteModalQuestion"
       :description="deleteModalDescription"
       confirm-text="Aceptar"
       cancel-text="Cancelar"
       :is-destructive="true"
-      :loading="isDeleteLoading"
-      @confirm="handleConfirmDelete"
-      @close="showDeleteModal = false"
+      :loading="eliminar.loading.value"
+      @confirm="eliminar.confirm"
+      @close="eliminar.cancel"
     />
 
     <!-- Loader Global de Acciones con paleta corporativa Verde Bosque #244B36 / Salvia #6F9678 -->
     <ActionLoader
-      :show="showActionLoader"
+      :show="isSubmitting"
       :message="actionLoaderMessage"
     />
   </div>

@@ -99,8 +99,8 @@ const isActive = (item) => {
           </div>
         </router-link>
 
-        <!-- Navegación de Escritorio (md+) -->
-        <nav class="hidden md:flex items-center gap-1.5" aria-label="Navegación principal">
+        <!-- Navegación de Escritorio (lg+): la cabecera completa necesita ~1050px, por eso no empieza en md -->
+        <nav class="hidden lg:flex items-center gap-1.5" aria-label="Navegación principal">
           <router-link
             v-for="item in navItems"
             :key="item.to"
@@ -123,10 +123,14 @@ const isActive = (item) => {
 
       <!-- Acciones de Usuario & Botón Móvil -->
       <div class="flex items-center gap-3 sm:gap-4">
-        <!-- Badge de Usuario Autenticado -->
-        <div class="hidden sm:flex items-center gap-2 text-sm text-verdoso bg-crema px-3.5 py-1.5 rounded-full border border-borde">
+        <!-- Badge de Usuario Autenticado: con nombre desde xl; entre lg y xl solo el icono (el nombre va en title) -->
+        <div
+          class="hidden lg:flex items-center gap-2 text-sm text-verdoso bg-crema px-3.5 py-1.5 rounded-full border border-borde"
+          :title="authStore.user?.name || 'Administrador'"
+          :aria-label="`Usuario: ${authStore.user?.name || 'Administrador'}`"
+        >
           <User class="w-4 h-4 text-salvia" />
-          <span class="font-medium">{{ authStore.user?.name || 'Administrador' }}</span>
+          <span class="font-medium hidden xl:inline">{{ authStore.user?.name || 'Administrador' }}</span>
         </div>
 
         <!-- Botón Cerrar Sesión -->
@@ -143,7 +147,7 @@ const isActive = (item) => {
         <!-- Botón Menú Móvil (md:hidden) -->
         <button
           @click="toggleMobileMenu"
-          class="md:hidden p-2 text-verdoso hover:text-bosque hover:bg-crema rounded-xl transition-colors cursor-pointer"
+          class="lg:hidden p-2 text-verdoso hover:text-bosque hover:bg-crema rounded-xl transition-colors cursor-pointer"
           :aria-expanded="isMobileMenuOpen"
           aria-label="Abrir menú de navegación"
         >
@@ -164,7 +168,7 @@ const isActive = (item) => {
     >
       <div
         v-if="isMobileMenuOpen"
-        class="md:hidden border-t border-borde bg-white px-4 pt-3 pb-4 space-y-1.5 shadow-md"
+        class="lg:hidden border-t border-borde bg-white px-4 pt-3 pb-4 space-y-1.5 shadow-md"
       >
         <router-link
           v-for="item in navItems"
@@ -185,8 +189,8 @@ const isActive = (item) => {
           <span>{{ item.name }}</span>
         </router-link>
 
-        <!-- Usuario en versión móvil -->
-        <div class="sm:hidden pt-2 mt-2 border-t border-borde flex items-center gap-2 px-3.5 text-xs text-verdoso-muted">
+        <!-- Usuario en el menú desplegable (visible en todo el rango en que el badge de la barra no está) -->
+        <div class="pt-2 mt-2 border-t border-borde flex items-center gap-2 px-3.5 text-xs text-verdoso-muted">
           <User class="w-4 h-4 text-salvia" />
           <span>Conectado como <strong class="text-verdoso">{{ authStore.user?.name || 'Administrador' }}</strong></span>
         </div>

@@ -17,6 +17,20 @@ export const formatMoney = (value) => `$${Number(value || 0).toFixed(2)}`
 export const formatMoneyOrDash = (value) => (value ? formatMoney(value) : SIN_DATO)
 
 /**
+ * Convierte una fecha a "aaaa-mm-dd" para un <input type="date">. Acepta el formato
+ * dd-mm-aaaa que serializa el backend, ISO (con o sin hora) y devuelve `fallback`
+ * (vacío por defecto) cuando no hay dato.
+ */
+export const toInputDate = (value, fallback = '') => {
+  if (!value) return fallback
+  const parts = String(value).substring(0, 10).split('-')
+  if (parts.length === 3) {
+    return parts[0].length === 4 ? parts.join('-') : `${parts[2]}-${parts[1]}-${parts[0]}`
+  }
+  return String(value)
+}
+
+/**
  * Fecha dd/mm/aaaa en es-ES. Acepta ISO, timestamps y el formato dd-mm-aaaa que
  * serializa el backend (se devuelve tal cual). Sin dato devuelve "—".
  */

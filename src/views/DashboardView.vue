@@ -5,6 +5,7 @@ import { useDashboardStore } from '@/stores/dashboard'
 import AppHeader from '@/components/common/AppHeader.vue'
 import GallinaIcon from '@/components/common/GallinaIcon.vue'
 import BaseAlert from '@/components/common/BaseAlert.vue'
+import PageHeader from '@/components/common/PageHeader.vue'
 import LoadingState from '@/components/common/LoadingState.vue'
 import DashboardKpiGrid from '@/components/dashboard/DashboardKpiGrid.vue'
 import AvesDistribucionCard from '@/components/dashboard/AvesDistribucionCard.vue'
@@ -52,21 +53,17 @@ const fechaFormateada = fechaActual.charAt(0).toUpperCase() + fechaActual.slice(
 
     <main class="flex-1 max-w-[1600px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       <!-- Encabezado -->
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h2 class="text-2xl sm:text-3xl font-extrabold text-verdoso tracking-tight">
-            Bienvenido, {{ authStore.user?.name || 'Administrador' }}
-          </h2>
-          <p class="text-sm text-verdoso-muted mt-1">
-            Indicadores de población, postura, alimentación y gastos de la granja.
-          </p>
-        </div>
-
-        <div class="hidden md:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium bg-white/70 border border-borde text-verdoso-muted self-start sm:self-auto">
-          <Calendar class="w-3.5 h-3.5 text-salvia" />
-          <span>{{ fechaFormateada }}</span>
-        </div>
-      </div>
+      <PageHeader
+        :title="`Bienvenido, ${authStore.user?.name || 'Administrador'}`"
+        subtitle="Indicadores de población, postura, alimentación y gastos de la granja."
+      >
+        <template #actions>
+          <div class="hidden md:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium bg-white/70 border border-borde text-verdoso-muted self-start sm:self-auto">
+            <Calendar class="w-3.5 h-3.5 text-salvia" />
+            <span>{{ fechaFormateada }}</span>
+          </div>
+        </template>
+      </PageHeader>
 
       <!-- Error de carga -->
       <div v-if="dashboardStore.error && !dashboardStore.hayDatos" class="space-y-3">

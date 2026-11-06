@@ -53,7 +53,8 @@ export const useProduccionStore = defineStore('produccion', {
       page: 1,
       per_page: 10,
     },
-    loading: false,
+    loadingHuevos: false,
+    loadingAlimentacion: false,
     error: null,
   }),
 
@@ -69,7 +70,7 @@ export const useProduccionStore = defineStore('produccion', {
 
     // --- ACCIONES DE HUEVOS ---
     async fetchHuevos(overrideParams = {}) {
-      this.loading = true
+      this.loadingHuevos = true
       this.error = null
       try {
         const queryParams = {
@@ -93,7 +94,7 @@ export const useProduccionStore = defineStore('produccion', {
         this.error = err.response?.data?.message || 'Error al cargar registros de huevos'
         throw err
       } finally {
-        this.loading = false
+        this.loadingHuevos = false
       }
     },
 
@@ -136,7 +137,7 @@ export const useProduccionStore = defineStore('produccion', {
 
     // --- ACCIONES DE ALIMENTACIÓN ---
     async fetchAlimentacion(overrideParams = {}) {
-      this.loading = true
+      this.loadingAlimentacion = true
       this.error = null
       try {
         const queryParams = {
@@ -160,7 +161,7 @@ export const useProduccionStore = defineStore('produccion', {
         this.error = err.response?.data?.message || 'Error al cargar registros de alimentación'
         throw err
       } finally {
-        this.loading = false
+        this.loadingAlimentacion = false
       }
     },
 

@@ -40,6 +40,19 @@ defineProps({
     type: Boolean,
     default: false,
   },
+  // Solo para type="number" y "date": se pasan al <input> (undefined = no se renderiza el atributo)
+  step: {
+    type: [String, Number],
+    default: undefined,
+  },
+  min: {
+    type: [String, Number],
+    default: undefined,
+  },
+  max: {
+    type: [String, Number],
+    default: undefined,
+  },
 })
 
 defineEmits(['update:modelValue', 'blur', 'enter', 'input'])
@@ -129,6 +142,9 @@ defineEmits(['update:modelValue', 'blur', 'enter', 'input'])
         :id="id"
         :value="modelValue"
         :type="type"
+        :step="step"
+        :min="min"
+        :max="max"
         :placeholder="placeholder"
         :disabled="disabled"
         @input="$emit('update:modelValue', $event.target.value); $emit('input', $event)"

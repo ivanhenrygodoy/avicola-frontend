@@ -26,6 +26,18 @@ export default {
         destructivo: '#B91C1C',
         'destructivo-bg': '#FEF2F2',
       },
+      // Utilidades que el proyecto ya usa (nombres de Tailwind 4) y que Tailwind 3 no trae.
+      // Sin esto las clases se ignoraban en silencio; los valores son los de Tailwind 4.
+      boxShadow: {
+        '2xs': '0 1px rgb(0 0 0 / 0.05)',
+        xs: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
+      },
+      backdropBlur: {
+        xs: '4px',
+      },
+      transitionDuration: {
+        250: '250ms',
+      },
     },
   },
   plugins: [],

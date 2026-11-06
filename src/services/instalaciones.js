@@ -5,6 +5,12 @@ export const getCasitas = async (params = {}) => {
   return response.data
 }
 
+// Granjas disponibles (para asignar una casita a su granja)
+export const getGranjas = async () => {
+  const response = await api.get('/granjas')
+  return response.data.data
+}
+
 export const getTiposInstalacion = async () => {
   const response = await api.get('/instalaciones/tipos')
   return response.data.data

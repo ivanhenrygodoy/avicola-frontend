@@ -118,3 +118,14 @@ src/
    - El Backdrop se anima exclusivamente con desvanecimiento suave de opacidad (`transition-opacity` de `opacity-0` a `opacity-100`).
    - La animación sutil de escala (`scale(0.96)` a `scale(1)`) se aplica de manera aislada y exclusiva a la tarjeta interior del diálogo (`.modal-content-animated`).
 
+7. **Validación Visual de Campos en Formularios (`FormField.vue`):**
+   - **Campos de Formularios (Login, Modales de Creación y Edición):** Deben utilizar siempre el componente común `FormField.vue`.
+   - **Diseño del Label:** Etiqueta estándar sobre el campo (`text-xs font-bold uppercase tracking-wider`). **NO usar descriptores notch o etiquetas flotantes sobre el borde en formularios**, para evitar interferencia visual en la entrada de datos.
+   - **Estado de Error / Inexistencia de Texto:**
+     - El borde del campo se resalta con borde rojo: `border-2 border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500`.
+     - La etiqueta cambia a color rojo (`text-red-600`).
+     - Inmediatamente debajo del campo se muestra el mensaje de error en texto rojo visible: `text-xs text-red-500 font-medium mt-1 leading-tight select-none` (ejemplo: *"El nombre de la casita es obligatorio"* o *"El correo electrónico es obligatorio"*).
+     - **Reactividad:** El error debe borrarse de forma inmediata tan pronto el usuario introduce texto en el campo (`@input="errors.campo = ''"`).
+     - **Mapeo Backend 422:** Al recibir error 422 con objeto `errors`, vincular cada mensaje del backend a su correspondiente campo en el formulario.
+   - **Campos de Filtros de Búsqueda:** Las barras de filtrado en tablas continúan utilizando `FloatingInput.vue` y `FloatingSelect.vue` (con notch label) y **NO** aplican validación de campo requerido ni bordes rojos de error.
+

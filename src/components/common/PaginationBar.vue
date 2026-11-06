@@ -31,14 +31,27 @@ const props = defineProps({
 
 const emit = defineEmits(['update:page', 'update:perPage'])
 
+// Hasta MAX_VISIBLES páginas se muestran todas; con más, se recorta con puntos suspensivos
+// ("…") manteniendo siempre la primera, la última y las vecinas de la página actual.
+const MAX_VISIBLES = 7
+
 const pages = computed(() => {
   const current = props.currentPage
   const total = props.lastPage
-  const items = []
 
-  for (let i = 1; i <= total; i++) {
-    items.push(i)
+  if (total <= MAX_VISIBLES) {
+    return Array.from({ length: total }, (_, i) => i + 1)
   }
+
+  const items = [1]
+  const desde = Math.max(2, current - 1)
+  const hasta = Math.min(total - 1, current + 1)
+
+  if (desde > 2) items.push('…')
+  for (let i = desde; i <= hasta; i++) items.push(i)
+  if (hasta < total - 1) items.push('…')
+
+  items.push(total)
   return items
 })
 
@@ -86,21 +99,29 @@ const onPerPageChange = (event) => {
         <ChevronLeft class="w-4 h-4 text-verdoso" />
       </button>
 
-      <!-- Botones numéricos de página -->
-      <button
-        v-for="page in pages"
-        :key="page"
-        type="button"
-        @click="onPageClick(page)"
-        :class="[
-          'w-7 h-7 rounded-full text-xs font-semibold transition-all cursor-pointer',
-          page === currentPage
-            ? 'btn-principal'
-            : 'text-verdoso hover:bg-crema'
-        ]"
-      >
-        {{ page }}
-      </button>
+      <!-- Botones numéricos de página (los puntos suspensivos no son clicables) -->
+      <template v-for="(page, i) in pages" :key="`${page}-${i}`">
+        <span
+          v-if="page === '…'"
+          class="w-7 h-7 flex items-center justify-center text-xs text-verdoso-muted select-none"
+          aria-hidden="true"
+        >…</span>
+        <button
+          v-else
+          type="button"
+          @click="onPageClick(page)"
+          :aria-current="page === currentPage ? 'page' : undefined"
+          :aria-label="`Página ${page}`"
+          :class="[
+            'w-7 h-7 rounded-full text-xs font-semibold transition-all cursor-pointer',
+            page === currentPage
+              ? 'btn-principal'
+              : 'text-verdoso hover:bg-crema'
+          ]"
+        >
+          {{ page }}
+        </button>
+      </template>
 
       <!-- Botón Siguiente -->
       <button

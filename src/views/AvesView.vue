@@ -1,151 +1,85 @@
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
-import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
+import { ref, computed, onMounted } from 'vue'
 import { useAvesStore } from '@/stores/aves'
 import { useInstalacionesStore } from '@/stores/instalaciones'
-import { useNotificationStore } from '@/stores/notification'
 
-// Componentes comunes globales (SOLID)
-import BaseModal from '@/components/common/BaseModal.vue'
-import BaseConfirmModal from '@/components/common/BaseConfirmModal.vue'
-import ActionLoader from '@/components/common/ActionLoader.vue'
-import PaginationBar from '@/components/common/PaginationBar.vue'
-import StatCard from '@/components/common/StatCard.vue'
-import FloatingInput from '@/components/common/FloatingInput.vue'
-import FloatingSelect from '@/components/common/FloatingSelect.vue'
-import FormField from '@/components/common/FormField.vue'
-import FilterBar from '@/components/common/FilterBar.vue'
-import AvesStats from '@/components/aves/AvesStats.vue'
+// Componentes comunes globales (SOLID - Impeccable)
 import AppHeader from '@/components/common/AppHeader.vue'
-import LoadingState from '@/components/common/LoadingState.vue'
-import EmptyState from '@/components/common/EmptyState.vue'
-import { formatDate } from '@/utils/format'
+import PageHeader from '@/components/common/PageHeader.vue'
+import FilterBar from '@/components/common/FilterBar.vue'
+import DataTable from '@/components/common/DataTable.vue'
+import StatusBadge from '@/components/common/StatusBadge.vue'
+import RowActionButton from '@/components/common/RowActionButton.vue'
+import ActionLoader from '@/components/common/ActionLoader.vue'
+import AvesStats from '@/components/aves/AvesStats.vue'
+
+// Modales del módulo Aves
+import AveFormModal from '@/components/aves/AveFormModal.vue'
+import AveTrasladoModal from '@/components/aves/AveTrasladoModal.vue'
+import AveMovimientosModal from '@/components/aves/AveMovimientosModal.vue'
+import AveDetalleModal from '@/components/aves/AveDetalleModal.vue'
+import AveBajaModal from '@/components/aves/AveBajaModal.vue'
+import AveReactivarModal from '@/components/aves/AveReactivarModal.vue'
+
+// Composables
+import { provideActionLoader } from '@/composables/useActionLoader'
 
 // Iconos Lucide
 import {
-  Home,
-  LayoutDashboard,
-  Layers,
-  Plus,
   Eye,
   History,
   Pencil,
   Trash2,
   ArrowRightLeft,
   RotateCcw,
-  User,
-  LogOut,
-  Loader2,
-  CheckCircle2,
-  XCircle,
-  AlertTriangle,
-  Calendar,
-  Scale,
-  FileText,
-  Activity,
-  ClipboardList,
 } from 'lucide-vue-next'
 
-const router = useRouter()
-const authStore = useAuthStore()
 const avesStore = useAvesStore()
 const instalacionesStore = useInstalacionesStore()
-const notify = useNotificationStore()
 
-// Modales
+// Overlay de carga provisto a todos los modales hijos
+const loader = provideActionLoader()
+const { isSubmitting, message: actionLoaderMessage } = loader
+
+// Control de modales y ave seleccionada
+const targetAve = ref(null)
 const showAveModal = ref(false)
 const showDetalleModal = ref(false)
 const showTrasladoModal = ref(false)
 const showMovimientosModal = ref(false)
-const showDeleteModal = ref(false)
+const showBajaModal = ref(false)
 const showReactivarModal = ref(false)
-const isEditing = ref(false)
-const isSubmitting = ref(false)
 
-// Loader global
-const showActionLoader = ref(false)
-const actionLoaderMessage = ref('Procesando solicitud...')
-
-// Ave en proceso
-const targetAve = ref(null)
-
-// Formulario de Registro / Edición (usa catálogos ctl_especie, ctl_sexo, ctl_proposito)
-const aveForm = ref({
-  id: null,
-  codigo: '',
-  nombre: '',
-  id_especie: '',
-  id_sexo: '',
-  id_proposito: '',
-  raza: 'Criolla',
-  id_division: '',
-  fecha_ingreso: new Date().toISOString().split('T')[0],
-  fecha_nacimiento: '',
-  peso_actual_kg: '',
-  observaciones: '',
-})
-
-// Errores de validación reactivos para FormField
-const aveErrors = ref({
-  codigo: '',
-  id_especie: '',
-  id_sexo: '',
-})
-
-// Formulario de Traslado
-const trasladoForm = ref({
-  id_casita_destino: '',
-  id_division_destino: '',
-  motivo: 'Rotación de pastoreo y balance de corral',
-  observaciones: '',
-  fecha: new Date().toISOString().split('T')[0],
-})
-
-const trasladoErrors = ref({
-  id_division_destino: '',
-})
-
-// Opciones dinámicas alimentadas desde endpoints ctl_especie y ctl_sexo
-const especieFiltroOptions = computed(() => {
-  return avesStore.catalogos.especies.map((esp) => ({
+// Opciones dinámicas para filtros desde catálogos
+const especieFiltroOptions = computed(() =>
+  avesStore.catalogos.especies.map((esp) => ({
     value: String(esp.id),
     label: esp.nombre,
   }))
-})
+)
 
-const sexoFiltroOptions = computed(() => {
-  return avesStore.catalogos.sexos.map((s) => ({
+const sexoFiltroOptions = computed(() =>
+  avesStore.catalogos.sexos.map((s) => ({
     value: String(s.id),
     label: s.nombre,
   }))
-})
-
-const formEspecieOptions = computed(() => {
-  return avesStore.catalogos.especies.map((esp) => ({
-    value: esp.id,
-    label: esp.nombre,
-  }))
-})
-
-const formSexoOptions = computed(() => {
-  return avesStore.catalogos.sexos.map((s) => ({
-    value: s.id,
-    label: s.nombre,
-  }))
-})
-
-const formPropositoOptions = computed(() => {
-  const list = [{ value: '', label: '-- Sin propósito definido --' }]
-  avesStore.catalogos.propositos.forEach((p) => {
-    list.push({ value: p.id, label: p.nombre })
-  })
-  return list
-})
+)
 
 const estadoFiltroOptions = [
   { value: 'activa', label: 'Activas' },
   { value: 'salida', label: 'Bajas' },
+]
+
+// Definición de columnas de la tabla (DataTable la dibuja)
+const columnas = [
+  { key: 'nombre', label: 'Ave', cellClass: 'text-verdoso' },
+  { key: 'especie', label: 'Especie', cellClass: 'text-verdoso' },
+  { key: 'sexo', label: 'Sexo', cellClass: 'text-verdoso' },
+  { key: 'raza', label: 'Raza', cellClass: 'text-verdoso' },
+  { key: 'proposito', label: 'Propósito', cellClass: 'text-verdoso' },
+  { key: 'ubicacion', label: 'Ubicación', cellClass: 'text-verdoso' },
+  { key: 'estado', label: 'Estado' },
+  { key: 'acciones', label: 'Acciones', align: 'right' },
 ]
 
 // Configuración de la barra de filtros (FilterBar la dibuja)
@@ -156,55 +90,6 @@ const filterFields = computed(() => [
   { key: 'estado', type: 'select', label: 'Estado del Ave', options: estadoFiltroOptions },
 ])
 
-// Divisiones agrupadas para el formulario de Ave
-const divisionesDisponibles = computed(() => {
-  const list = [{ value: '', label: '-- Sin asignación inicial --' }]
-  instalacionesStore.casitas.forEach((casita) => {
-    if (casita.divisiones && casita.divisiones.length > 0) {
-      casita.divisiones.forEach((div) => {
-        if (div.activa) {
-          list.push({
-            value: div.id,
-            label: `${casita.nombre} • ${div.nombre}`,
-          })
-        }
-      })
-    }
-  })
-  return list
-})
-
-// Divisiones filtradas por casita para el modal de traslado
-const divisionesTrasladoOptions = computed(() => {
-  if (!trasladoForm.value.id_casita_destino) return []
-  const casita = instalacionesStore.casitas.find(
-    (c) => String(c.id) === String(trasladoForm.value.id_casita_destino)
-  )
-  if (!casita || !casita.divisiones) return []
-  return casita.divisiones.filter((d) => d.activa)
-})
-
-// Advertencia biológica preventiva en el modal de traslado
-const advertenciaBiologica = computed(() => {
-  if (!targetAve.value || !trasladoForm.value.id_division_destino) return null
-
-  const targetDivId = Number(trasladoForm.value.id_division_destino)
-  // Buscar si hay aves de otra especie en esa división
-  const avesEnDestino = avesStore.aves.filter(
-    (a) => a.id_division === targetDivId && a.id !== targetAve.value.id && a.estado === 'activa'
-  )
-
-  if (avesEnDestino.length > 0) {
-    const otraAve = avesEnDestino[0]
-    if (otraAve.id_especie !== targetAve.value.id_especie) {
-      const especieExistente = otraAve.especie?.nombre || 'otra especie'
-      const especieAve = targetAve.value.especie?.nombre || 'esta especie'
-      return `¡Atención! La división destino alberga ${especieExistente}s. Las directrices biológicas prohíben mezclar ${especieAve}s con ${especieExistente}s.`
-    }
-  }
-  return null
-})
-
 onMounted(async () => {
   await Promise.all([
     avesStore.fetchCatalogos(),
@@ -213,7 +98,7 @@ onMounted(async () => {
   ])
 })
 
-// Acciones de Filtro
+// Acciones de búsqueda y paginación
 const handleSearch = async () => {
   avesStore.filters.page = 1
   await avesStore.fetchAves()
@@ -231,396 +116,65 @@ const handlePerPageChange = async (perPage) => {
   await avesStore.setPerPage(perPage)
 }
 
-// Modal Crear Ave
+// Apertura de modales
 const openCreateAve = () => {
-  isEditing.value = false
   targetAve.value = null
-  aveErrors.value = { codigo: '', id_especie: '', id_sexo: '' }
-  aveForm.value = {
-    id: null,
-    codigo: '',
-    nombre: '',
-    id_especie: avesStore.catalogos.especies[0]?.id || '',
-    id_sexo: avesStore.catalogos.sexos[0]?.id || '',
-    id_proposito: avesStore.catalogos.propositos[0]?.id || '',
-    raza: 'Criolla',
-    id_division: '',
-    fecha_ingreso: new Date().toISOString().split('T')[0],
-    fecha_nacimiento: '',
-    peso_actual_kg: '',
-    observaciones: '',
-  }
   showAveModal.value = true
 }
 
-// Modal Editar Ave
 const openEditAve = (ave) => {
-  isEditing.value = true
   targetAve.value = ave
-  aveErrors.value = { codigo: '', id_especie: '', id_sexo: '' }
-  aveForm.value = {
-    id: ave.id,
-    codigo: ave.codigo,
-    nombre: ave.nombre || '',
-    id_especie: ave.id_especie || ave.especie?.id || '',
-    id_sexo: ave.id_sexo || ave.sexo?.id || '',
-    id_proposito: ave.id_proposito || ave.proposito?.id || '',
-    raza: ave.raza || '',
-    id_division: ave.id_division || '',
-    fecha_ingreso: ave.fecha_ingreso || '',
-    fecha_nacimiento: ave.fecha_nacimiento || '',
-    peso_actual_kg: ave.peso_actual_kg || '',
-    observaciones: ave.observaciones || '',
-  }
   showAveModal.value = true
 }
 
-// Submit Crear / Editar Ave
-const handleSubmitAve = async () => {
-  aveErrors.value = { codigo: '', id_especie: '', id_sexo: '' }
-  let hasError = false
-
-  if (!aveForm.value.codigo || !aveForm.value.codigo.trim()) {
-    aveErrors.value.codigo = 'El código identificador del ave es obligatorio'
-    hasError = true
-  }
-  if (!aveForm.value.id_especie) {
-    aveErrors.value.id_especie = 'La especie es obligatoria'
-    hasError = true
-  }
-  if (!aveForm.value.id_sexo) {
-    aveErrors.value.id_sexo = 'El sexo es obligatorio'
-    hasError = true
-  }
-
-  if (hasError) return
-
-  isSubmitting.value = true
-  actionLoaderMessage.value = isEditing.value
-    ? `Guardando cambios de ${aveForm.value.codigo}...`
-    : `Registrando ave ${aveForm.value.codigo}...`
-  showActionLoader.value = true
-
-  try {
-    const payload = {
-      ...aveForm.value,
-      codigo: aveForm.value.codigo.trim(),
-      nombre: aveForm.value.nombre?.trim() || null,
-      id_especie: Number(aveForm.value.id_especie),
-      id_sexo: Number(aveForm.value.id_sexo),
-      id_proposito: aveForm.value.id_proposito ? Number(aveForm.value.id_proposito) : null,
-      id_division: aveForm.value.id_division ? Number(aveForm.value.id_division) : null,
-      peso_actual_kg: aveForm.value.peso_actual_kg ? Number(aveForm.value.peso_actual_kg) : null,
-    }
-
-    if (isEditing.value) {
-      await avesStore.updateAve(aveForm.value.id, payload)
-      notify.success('Ave actualizada exitosamente.')
-    } else {
-      await avesStore.addAve(payload)
-      notify.success('Ave registrada exitosamente.')
-    }
-    showAveModal.value = false
-  } catch (err) {
-    console.error('Error al guardar ave:', err)
-    const msg = err.response?.data?.message || 'Error al procesar la información del ave.'
-    if (err.response?.status === 422) {
-      if (err.response.data?.errors) {
-        if (err.response.data.errors.codigo) aveErrors.value.codigo = err.response.data.errors.codigo[0]
-        if (err.response.data.errors.id_especie) aveErrors.value.id_especie = err.response.data.errors.id_especie[0]
-        if (err.response.data.errors.id_sexo) aveErrors.value.id_sexo = err.response.data.errors.id_sexo[0]
-      }
-      notify.warning(msg)
-    } else {
-      notify.error(msg)
-    }
-  } finally {
-    isSubmitting.value = false
-    showActionLoader.value = false
-  }
+const openDetalle = (ave) => {
+  targetAve.value = ave
+  showDetalleModal.value = true
 }
 
-// Modal Trasladar Ave
 const openTraslado = (ave) => {
   targetAve.value = ave
-  trasladoErrors.value = { id_division_destino: '' }
-
-  const casitaActualId = ave.division?.id_casita || ''
-  trasladoForm.value = {
-    id_casita_destino: casitaActualId ? String(casitaActualId) : '',
-    id_division_destino: '',
-    motivo: 'Rotación de pastoreo y balance de corral',
-    observaciones: '',
-    fecha: new Date().toISOString().split('T')[0],
-  }
   showTrasladoModal.value = true
 }
 
-// Cuando cambia la casita destino, resetear corral seleccionado
-watch(
-  () => trasladoForm.value.id_casita_destino,
-  () => {
-    trasladoForm.value.id_division_destino = ''
-  }
-)
-
-const handleSubmitTraslado = async () => {
-  trasladoErrors.value = { id_division_destino: '' }
-
-  if (!trasladoForm.value.id_division_destino) {
-    trasladoErrors.value.id_division_destino = 'Debes seleccionar la división de destino'
-    return
-  }
-
-  isSubmitting.value = true
-  actionLoaderMessage.value = `Trasladando ave ${targetAve.value.codigo}...`
-  showActionLoader.value = true
-
-  try {
-    await avesStore.trasladarAve(targetAve.value.id, {
-      id_division_destino: Number(trasladoForm.value.id_division_destino),
-      motivo: trasladoForm.value.motivo,
-      observaciones: trasladoForm.value.observaciones,
-      fecha: trasladoForm.value.fecha,
-    })
-    notify.success(`Ave ${targetAve.value.codigo} trasladada correctamente.`)
-    showTrasladoModal.value = false
-  } catch (err) {
-    console.error('Error al trasladar ave:', err)
-    const msg = err.response?.data?.message || 'Error al ejecutar el traslado.'
-    if (err.response?.status === 422) {
-      if (err.response.data?.errors?.id_division_destino) {
-        trasladoErrors.value.id_division_destino = err.response.data.errors.id_division_destino[0]
-      }
-      notify.warning(msg)
-    } else {
-      notify.error(msg)
-    }
-  } finally {
-    isSubmitting.value = false
-    showActionLoader.value = false
-  }
-}
-
-// Pestañas de la Ficha Técnica (Ojito 👁️)
-const detalleTab = ref('ficha') // 'ficha' | 'pesos' | 'bitacora'
-
-// Formulario de pesaje
-const defaultPesoForm = () => ({
-  fecha: new Date().toISOString().split('T')[0],
-  peso_kg: '',
-  observaciones: '',
-})
-const pesoForm = ref(defaultPesoForm())
-const pesoErrors = ref({ peso_kg: '' })
-const isSubmittingPeso = ref(false)
-
-// Formulario de bitácora sanitaria
-const tipoObsOptions = [
-  { value: 'Salud', label: 'Salud' },
-  { value: 'Comportamiento', label: 'Comportamiento' },
-  { value: 'Vacunación', label: 'Vacunación' },
-  { value: 'Incidencia', label: 'Incidencia' },
-  { value: 'Nutrición', label: 'Nutrición' },
-  { value: 'General', label: 'General' },
-]
-
-const defaultObsForm = () => ({
-  fecha: new Date().toISOString().split('T')[0],
-  tipo: 'Salud',
-  titulo: '',
-  descripcion: '',
-  accion_tomada: '',
-})
-const obsForm = ref(defaultObsForm())
-const obsErrors = ref({ titulo: '', descripcion: '' })
-const isSubmittingObs = ref(false)
-
-// Modal Detalle Completo del Ave (Ojito 👁️ con Pestañas)
-const openDetalle = async (ave) => {
-  targetAve.value = ave
-  detalleTab.value = 'ficha'
-  pesoForm.value = defaultPesoForm()
-  obsForm.value = defaultObsForm()
-  pesoErrors.value = { peso_kg: '' }
-  obsErrors.value = { titulo: '', descripcion: '' }
-  showDetalleModal.value = true
-
-  try {
-    await Promise.all([
-      avesStore.fetchPesos(ave.id),
-      avesStore.fetchObservaciones(ave.id),
-    ])
-  } catch (err) {
-    console.error('Error cargando historial de seguimiento:', err)
-  }
-}
-
-const handleSubmitPeso = async () => {
-  pesoErrors.value = { peso_kg: '' }
-  if (!pesoForm.value.peso_kg || Number(pesoForm.value.peso_kg) <= 0) {
-    pesoErrors.value.peso_kg = 'Ingresa un peso válido mayor a 0 kg'
-    return
-  }
-
-  isSubmittingPeso.value = true
-  try {
-    const res = await avesStore.addPeso(targetAve.value.id, {
-      fecha: pesoForm.value.fecha,
-      peso_kg: Number(pesoForm.value.peso_kg),
-      observaciones: pesoForm.value.observaciones || null,
-    })
-    if (res?.ave?.peso_actual_kg !== undefined) {
-      targetAve.value.peso_actual_kg = res.ave.peso_actual_kg
-    }
-    notify.success('Pesaje registrado correctamente.')
-    pesoForm.value = defaultPesoForm()
-  } catch (err) {
-    console.error('Error al registrar peso:', err)
-    notify.error('No se pudo registrar el pesaje.')
-  } finally {
-    isSubmittingPeso.value = false
-  }
-}
-
-const handleDeletePeso = async (idPeso) => {
-  try {
-    const res = await avesStore.deletePeso(targetAve.value.id, idPeso)
-    if (res?.ave?.peso_actual_kg !== undefined) {
-      targetAve.value.peso_actual_kg = res.ave.peso_actual_kg
-    }
-    notify.success('Registro de pesaje eliminado.')
-  } catch (err) {
-    console.error('Error eliminando pesaje:', err)
-    notify.error('No se pudo eliminar el pesaje.')
-  }
-}
-
-const handleSubmitObs = async () => {
-  obsErrors.value = { titulo: '', descripcion: '' }
-  if (!obsForm.value.titulo.trim()) {
-    obsErrors.value.titulo = 'El título o motivo es obligatorio'
-    return
-  }
-  if (!obsForm.value.descripcion.trim()) {
-    obsErrors.value.descripcion = 'La descripción es obligatoria'
-    return
-  }
-
-  isSubmittingObs.value = true
-  try {
-    await avesStore.addObservacion(targetAve.value.id, {
-      fecha: obsForm.value.fecha,
-      tipo: obsForm.value.tipo,
-      titulo: obsForm.value.titulo.trim(),
-      descripcion: obsForm.value.descripcion.trim(),
-      accion_tomada: obsForm.value.accion_tomada?.trim() || null,
-    })
-    notify.success('Evento de bitácora registrado.')
-    obsForm.value = defaultObsForm()
-  } catch (err) {
-    console.error('Error registrando observación:', err)
-    notify.error('No se pudo registrar la observación.')
-  } finally {
-    isSubmittingObs.value = false
-  }
-}
-
-const handleDeleteObs = async (idObs) => {
-  try {
-    await avesStore.deleteObservacion(targetAve.value.id, idObs)
-    notify.success('Registro de bitácora eliminado.')
-  } catch (err) {
-    console.error('Error eliminando evento:', err)
-    notify.error('No se pudo eliminar el registro.')
-  }
-}
-
-// Modal Ver Historial de Movimientos
-const openMovimientos = async (ave) => {
+const openMovimientos = (ave) => {
   targetAve.value = ave
   showMovimientosModal.value = true
-  await avesStore.fetchMovimientos(ave.id)
 }
 
-// Modal Dar de Baja
-const defaultBajaForm = () => ({
-  motivo: 'Baja / Salida',
-  observaciones: '',
-})
-const bajaForm = ref(defaultBajaForm())
-
-const openDeleteAve = (ave) => {
+const openBaja = (ave) => {
   targetAve.value = ave
-  bajaForm.value = defaultBajaForm()
-  showDeleteModal.value = true
+  showBajaModal.value = true
 }
 
-const handleConfirmDelete = async () => {
-  if (!targetAve.value) return
-  isSubmitting.value = true
-  actionLoaderMessage.value = `Dando de baja a ${targetAve.value.codigo}...`
-  showActionLoader.value = true
-
-  try {
-    await avesStore.removeAve(targetAve.value.id, {
-      motivo: bajaForm.value.motivo?.trim() || 'Baja / Salida',
-      observaciones: bajaForm.value.observaciones?.trim() || null,
-    })
-    notify.success(`El ave ${targetAve.value.codigo} ha sido dada de baja correctamente y se registró el movimiento de salida.`)
-    showDeleteModal.value = false
-  } catch (err) {
-    console.error('Error al dar de baja ave:', err)
-    notify.error('Error al procesar la baja del ave.')
-  } finally {
-    isSubmitting.value = false
-    showActionLoader.value = false
-  }
-}
-
-// Modal Reactivar / Reincorporar Ave
-const defaultReactivarForm = () => ({
-  id_division_destino: '',
-  observaciones: '',
-})
-const reactivarForm = ref(defaultReactivarForm())
-
-const openReactivarAve = (ave) => {
+const openReactivar = (ave) => {
   targetAve.value = ave
-  reactivarForm.value = defaultReactivarForm()
   showReactivarModal.value = true
 }
 
-const handleConfirmReactivar = async () => {
-  if (!targetAve.value) return
-  isSubmitting.value = true
-  actionLoaderMessage.value = `Reactivando ave ${targetAve.value.codigo}...`
-  showActionLoader.value = true
-
-  try {
-    const payload = {
-      observaciones: reactivarForm.value.observaciones?.trim() || null,
-    }
-    if (reactivarForm.value.id_division_destino) {
-      payload.id_division_destino = Number(reactivarForm.value.id_division_destino)
-    }
-
-    await avesStore.reactivarAve(targetAve.value.id, payload)
-    notify.success(`El ave ${targetAve.value.codigo} ha sido reactivada e incorporada exitosamente, registrando el movimiento de reingreso.`)
-    showReactivarModal.value = false
-  } catch (err) {
-    console.error('Error al reactivar ave:', err)
-    notify.error(err.response?.data?.message || 'Error al procesar la reactivación del ave.')
-  } finally {
-    isSubmitting.value = false
-    showActionLoader.value = false
-  }
+// Callbacks tras mutaciones en los modales
+const onAveSaved = async () => {
+  await avesStore.fetchAves()
 }
 
-// Logout
-const handleLogout = async () => {
-  await authStore.logout()
-  router.push({ name: 'login' })
+const onAveTrasladada = async () => {
+  await Promise.all([
+    avesStore.fetchAves(),
+    instalacionesStore.fetchCasitas({ per_page: 50 }),
+  ])
+}
+
+const onAveUpdated = async (aveActualizada) => {
+  targetAve.value = aveActualizada
+  await avesStore.fetchAves()
+}
+
+const onAveBajaConfirmed = async () => {
+  await avesStore.fetchAves()
+}
+
+const onAveReactivadaConfirmed = async () => {
+  await avesStore.fetchAves()
 }
 </script>
 
@@ -631,6 +185,12 @@ const handleLogout = async () => {
 
     <!-- Contenido Principal -->
     <main class="flex-1 max-w-[1600px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+      <!-- Encabezado de Página -->
+      <PageHeader
+        title="Inventario de Aves"
+        subtitle="Registro individual, seguimiento zootécnico, pesajes y movimientos con segregación biológica."
+      />
+
       <!-- Estadísticas Reutilizables de Inventario de Aves (SOLID) -->
       <AvesStats :stats="avesStore.stats" />
 
@@ -645,1044 +205,113 @@ const handleLogout = async () => {
         @action="openCreateAve"
       />
 
-      <!-- Tabla de Inventario de Aves -->
-      <div class="bg-white rounded-2xl border border-borde shadow-xs overflow-hidden">
-        <LoadingState v-if="avesStore.loading" />
+      <!-- Tabla de Inventario de Aves (DataTable Reutilizable) -->
+      <DataTable
+        :columns="columnas"
+        :rows="avesStore.aves"
+        :loading="avesStore.loading"
+        :meta="avesStore.meta"
+        item-label="aves"
+        empty-title="Sin resultados en el inventario"
+        empty-description="No se encontraron aves con los criterios de búsqueda seleccionados."
+        empty-action-label="Limpiar filtros"
+        @empty-action="handleClear"
+        @update:page="handlePageChange"
+        @update:per-page="handlePerPageChange"
+      >
+        <template #cell-nombre="{ row }">{{ row.nombre ? `"${row.nombre}"` : '—' }}</template>
 
-        <div v-else class="overflow-x-auto">
-          <table class="w-full text-left text-sm">
-            <thead class="bg-crema/60 border-b border-borde text-verdoso font-bold text-xs uppercase tracking-wider">
-              <tr>
-                <th scope="col" class="px-6 py-4">Ave</th>
-                <th scope="col" class="px-6 py-4">Especie</th>
-                <th scope="col" class="px-6 py-4">Sexo</th>
-                <th scope="col" class="px-6 py-4">Raza</th>
-                <th scope="col" class="px-6 py-4">Propósito</th>
-                <th scope="col" class="px-6 py-4">Ubicación</th>
-                <th scope="col" class="px-6 py-4">Estado</th>
-                <th scope="col" class="px-6 py-4 text-right">Acciones</th>
-              </tr>
-            </thead>
+        <template #cell-especie="{ row }">{{ row.especie?.nombre || '—' }}</template>
 
-            <tbody class="divide-y divide-borde">
-              <!-- Estado vacío mejorado (Empty State - Impeccable) -->
-              <tr v-if="avesStore.aves.length === 0">
-                <td colspan="8" class="px-6 py-14 text-center">
-                  <EmptyState
-                    title="Sin resultados en el inventario"
-                    description="No se encontraron aves con los criterios de búsqueda seleccionados."
-                    action-label="Limpiar filtros"
-                    @action="handleClear"
-                  />
-                </td>
-              </tr>
+        <template #cell-sexo="{ row }">{{ row.sexo?.nombre || '—' }}</template>
 
-              <tr
-                v-for="ave in avesStore.aves"
-                :key="ave.id"
-                class="hover:bg-crema/30 transition-colors"
-              >
-                <!-- Ave / Nombre (texto normal) -->
-                <td class="px-6 py-4 text-verdoso">
-                  {{ ave.nombre ? `"${ave.nombre}"` : '—' }}
-                </td>
+        <template #cell-raza="{ row }">{{ row.raza || 'Criolla' }}</template>
 
-                <!-- Especie (Solo texto plano) -->
-                <td class="px-6 py-4 text-verdoso">
-                  {{ ave.especie?.nombre || '—' }}
-                </td>
+        <template #cell-proposito="{ row }">{{ row.proposito?.nombre || 'General' }}</template>
 
-                <!-- Sexo (Solo texto plano) -->
-                <td class="px-6 py-4 text-verdoso">
-                  {{ ave.sexo?.nombre || '—' }}
-                </td>
+        <template #cell-ubicacion="{ row }">{{ row.division?.casita?.nombre ? `${row.division.casita.nombre} • ${row.division.nombre}` : 'Sin asignar' }}</template>
 
-                <!-- Raza (Solo texto plano) -->
-                <td class="px-6 py-4 text-verdoso">
-                  {{ ave.raza || 'Criolla' }}
-                </td>
+        <template #cell-estado="{ row }">
+          <StatusBadge :variant="row.estado === 'activa' ? 'success' : 'danger'">
+            {{ row.estado === 'activa' ? 'Activa' : 'Baja' }}
+          </StatusBadge>
+        </template>
 
-                <!-- Propósito (Solo texto plano) -->
-                <td class="px-6 py-4 text-verdoso">
-                  {{ ave.proposito?.nombre || 'General' }}
-                </td>
-
-                <!-- Ubicación (Solo Casita, sin división) -->
-                <td class="px-6 py-4 text-verdoso">
-                  {{ ave.division?.casita?.nombre || 'Sin asignar' }}
-                </td>
-
-                <!-- Estado (Único con pill de color y border semántico) -->
-                <td class="px-6 py-4">
-                  <span
-                    :class="[
-                      'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs border',
-                      ave.estado === 'activa'
-                        ? 'bg-bosque-50 text-bosque border-bosque/20'
-                        : 'bg-red-50 text-red-700 border-red-200'
-                    ]"
-                  >
-                    {{ ave.estado === 'activa' ? 'Activa' : 'Baja' }}
-                  </span>
-                </td>
-
-                <!-- Acciones (Detalle 👁️, Historial 🕒, Trasladar ⇄, Lápiz ✏️, Basura 🗑️ / Reactivar 🔄) con accesibilidad aria-label y toque ergonómico -->
-                <td class="px-6 py-4 text-right">
-                  <div class="flex items-center justify-end gap-1.5 text-salvia">
-                    <!-- Ojito: Ver Detalle Completo del Ave (Lectura) -->
-                    <button
-                      @click="openDetalle(ave)"
-                      class="p-2 min-w-[34px] min-h-[34px] inline-flex items-center justify-center hover:text-bosque hover:bg-salvia-50 rounded-lg transition-colors cursor-pointer"
-                      title="Ver detalle completo del ave"
-                      aria-label="Ver detalle completo del ave"
-                    >
-                      <Eye class="w-4 h-4" />
-                    </button>
-
-                    <!-- Historial: Ver Historial de Movimientos y Traslados -->
-                    <button
-                      @click="openMovimientos(ave)"
-                      class="p-2 min-w-[34px] min-h-[34px] inline-flex items-center justify-center hover:text-bosque hover:bg-salvia-50 rounded-lg transition-colors cursor-pointer"
-                      title="Ver historial de traslados"
-                      aria-label="Ver historial de traslados"
-                    >
-                      <History class="w-4 h-4" />
-                    </button>
-
-                    <!-- Trasladar Ave (Separación Biológica) -->
-                    <button
-                      v-if="ave.estado === 'activa'"
-                      @click="openTraslado(ave)"
-                      class="p-2 min-w-[34px] min-h-[34px] inline-flex items-center justify-center hover:text-bosque hover:bg-bosque-50 rounded-lg transition-colors cursor-pointer"
-                      title="Trasladar ave a otra división"
-                      aria-label="Trasladar ave a otra división"
-                    >
-                      <ArrowRightLeft class="w-4 h-4 text-bosque" />
-                    </button>
-
-                    <!-- Lápiz: Editar Ave -->
-                    <button
-                      @click="openEditAve(ave)"
-                      class="p-2 min-w-[34px] min-h-[34px] inline-flex items-center justify-center hover:text-tierra hover:bg-tierra-50 rounded-lg transition-colors cursor-pointer"
-                      title="Editar datos del ave"
-                      aria-label="Editar datos del ave"
-                    >
-                      <Pencil class="w-4 h-4" />
-                    </button>
-
-                    <!-- Basurero: Dar de baja (solo cuando está activa) -->
-                    <button
-                      v-if="ave.estado === 'activa'"
-                      @click="openDeleteAve(ave)"
-                      class="p-2 min-w-[34px] min-h-[34px] inline-flex items-center justify-center hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                      title="Dar de baja ave"
-                      aria-label="Dar de baja ave"
-                    >
-                      <Trash2 class="w-4 h-4" />
-                    </button>
-
-                    <!-- Icono de Retorno: Reactivar / Reincorporar ave (cuando está de baja) -->
-                    <button
-                      v-else
-                      @click="openReactivarAve(ave)"
-                      class="p-2 min-w-[34px] min-h-[34px] inline-flex items-center justify-center text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer"
-                      title="Reactivar ave / Marcar como regresada"
-                      aria-label="Reactivar ave / Marcar como regresada"
-                    >
-                      <RotateCcw class="w-4 h-4" />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- Paginador Reutilizable -->
-        <PaginationBar
-          :current-page="avesStore.meta.current_page"
-          :last-page="avesStore.meta.last_page"
-          :per-page="avesStore.meta.per_page"
-          :total="avesStore.meta.total"
-          item-label="aves"
-          @update:page="handlePageChange"
-          @update:per-page="handlePerPageChange"
-        />
-      </div>
+        <template #cell-acciones="{ row }">
+          <div class="flex items-center justify-end gap-1.5">
+            <RowActionButton :icon="Eye" title="Ver detalle completo del ave" @click="openDetalle(row)" />
+            <RowActionButton :icon="History" title="Ver historial de traslados" @click="openMovimientos(row)" />
+            <RowActionButton
+              v-if="row.estado === 'activa'"
+              :icon="ArrowRightLeft"
+              title="Trasladar ave a otra división"
+              @click="openTraslado(row)"
+            />
+            <RowActionButton :icon="Pencil" tone="edit" title="Editar datos del ave" @click="openEditAve(row)" />
+            <RowActionButton
+              v-if="row.estado === 'activa'"
+              :icon="Trash2"
+              tone="danger"
+              title="Dar de baja ave"
+              @click="openBaja(row)"
+            />
+            <RowActionButton
+              v-else
+              :icon="RotateCcw"
+              tone="success"
+              title="Reactivar ave / Marcar como regresada"
+              @click="openReactivar(row)"
+            />
+          </div>
+        </template>
+      </DataTable>
     </main>
 
-    <!-- MODAL 0: Ficha Técnica Detallada del Ave (Pestañas: Ficha, Pesos, Bitácora - Ojito 👁️) -->
-    <BaseModal
-      :is-open="showDetalleModal && !!targetAve"
-      max-width="4xl"
+    <!-- Modales Extraídos del Módulo Aves -->
+    <AveDetalleModal
+      :is-open="showDetalleModal"
+      :ave="targetAve"
       @close="showDetalleModal = false"
-    >
-      <template #header>
-        <div class="space-y-3">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-salvia/15 text-bosque border border-salvia/20">
-                {{ targetAve?.especie?.nombre || 'Ave' }}
-              </span>
-              <span
-                :class="[
-                  'px-2.5 py-0.5 rounded-full text-xs font-semibold border',
-                  targetAve?.estado === 'activa'
-                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                    : 'bg-red-50 text-red-800 border-red-200'
-                ]"
-              >
-                {{ targetAve?.estado === 'activa' ? 'Activa' : 'Baja' }}
-              </span>
-            </div>
-            <span class="text-xs text-verdoso-muted font-mono">
-              Código: <span class="font-bold text-verdoso">{{ targetAve?.codigo }}</span>
-            </span>
-          </div>
+      @ave-updated="onAveUpdated"
+    />
 
-          <h3 class="text-xl font-bold text-verdoso">
-            {{ targetAve?.nombre ? `"${targetAve?.nombre}"` : targetAve?.codigo }}
-          </h3>
-
-          <!-- Navegación de Pestañas Ergonómica (SOLID - Impeccable) -->
-          <div class="flex items-center gap-2 border-b border-borde pt-1">
-            <button
-              type="button"
-              @click="detalleTab = 'ficha'"
-              :class="[
-                'px-4 py-2.5 text-xs font-semibold rounded-t-xl transition-all border-b-2 flex items-center gap-2 cursor-pointer',
-                detalleTab === 'ficha'
-                  ? 'border-bosque text-bosque bg-salvia-50/60 font-bold'
-                  : 'border-transparent text-verdoso-muted hover:text-verdoso hover:bg-salvia-50/20'
-              ]"
-            >
-              <FileText class="w-4 h-4" />
-              <span>Ficha General</span>
-            </button>
-            <button
-              type="button"
-              @click="detalleTab = 'pesos'"
-              :class="[
-                'px-4 py-2.5 text-xs font-semibold rounded-t-xl transition-all border-b-2 flex items-center gap-2 cursor-pointer',
-                detalleTab === 'pesos'
-                  ? 'border-bosque text-bosque bg-salvia-50/60 font-bold'
-                  : 'border-transparent text-verdoso-muted hover:text-verdoso hover:bg-salvia-50/20'
-              ]"
-            >
-              <Scale class="w-4 h-4" />
-              <span>Control de Peso</span>
-              <span class="px-2 py-0.5 rounded-full text-[11px] bg-salvia/20 text-bosque font-bold">
-                {{ avesStore.pesos.length }}
-              </span>
-            </button>
-            <button
-              type="button"
-              @click="detalleTab = 'bitacora'"
-              :class="[
-                'px-4 py-2.5 text-xs font-semibold rounded-t-xl transition-all border-b-2 flex items-center gap-2 cursor-pointer',
-                detalleTab === 'bitacora'
-                  ? 'border-bosque text-bosque bg-salvia-50/60 font-bold'
-                  : 'border-transparent text-verdoso-muted hover:text-verdoso hover:bg-salvia-50/20'
-              ]"
-            >
-              <ClipboardList class="w-4 h-4" />
-              <span>Bitácora Sanitaria</span>
-              <span class="px-2 py-0.5 rounded-full text-[11px] bg-salvia/20 text-bosque font-bold">
-                {{ avesStore.observaciones.length }}
-              </span>
-            </button>
-          </div>
-        </div>
-      </template>
-
-      <!-- PESTAÑA 1: FICHA GENERAL (Solo Lectura) -->
-      <div v-if="detalleTab === 'ficha'" class="space-y-4">
-        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          <!-- Especie -->
-          <div class="p-3.5 bg-white border border-borde rounded-xl shadow-2xs">
-            <span class="text-[11px] font-bold text-salvia uppercase tracking-wider block">Especie</span>
-            <span class="text-sm font-semibold text-verdoso mt-0.5 block">
-              {{ targetAve?.especie?.nombre || '—' }}
-            </span>
-          </div>
-
-          <!-- Sexo -->
-          <div class="p-3.5 bg-white border border-borde rounded-xl shadow-2xs">
-            <span class="text-[11px] font-bold text-salvia uppercase tracking-wider block">Sexo</span>
-            <span class="text-sm font-semibold text-verdoso mt-0.5 block">
-              {{ targetAve?.sexo?.nombre || '—' }}
-            </span>
-          </div>
-
-          <!-- Raza -->
-          <div class="p-3.5 bg-white border border-borde rounded-xl shadow-2xs">
-            <span class="text-[11px] font-bold text-salvia uppercase tracking-wider block">Raza</span>
-            <span class="text-sm font-semibold text-verdoso mt-0.5 block">
-              {{ targetAve?.raza || 'Criolla' }}
-            </span>
-          </div>
-
-          <!-- Propósito -->
-          <div class="p-3.5 bg-white border border-borde rounded-xl shadow-2xs">
-            <span class="text-[11px] font-bold text-salvia uppercase tracking-wider block">Propósito</span>
-            <span class="text-sm font-semibold text-verdoso mt-0.5 block">
-              {{ targetAve?.proposito?.nombre || '—' }}
-            </span>
-          </div>
-
-          <!-- Peso Actual -->
-          <div class="p-3.5 bg-white border border-borde rounded-xl shadow-2xs">
-            <span class="text-[11px] font-bold text-salvia uppercase tracking-wider block">Peso Actual</span>
-            <span class="text-sm font-semibold text-bosque mt-0.5 block">
-              {{ targetAve?.peso_actual_kg ? `${targetAve.peso_actual_kg} kg` : 'No registrado' }}
-            </span>
-          </div>
-
-          <!-- Fecha de Ingreso -->
-          <div class="p-3.5 bg-white border border-borde rounded-xl shadow-2xs">
-            <span class="text-[11px] font-bold text-salvia uppercase tracking-wider block">Fecha de Ingreso</span>
-            <span class="text-sm font-semibold text-verdoso mt-0.5 block">
-              {{ formatDate(targetAve?.fecha_ingreso) }}
-            </span>
-          </div>
-        </div>
-
-        <!-- Ubicación Física Actual (Casita y Corral) -->
-        <div class="p-4 bg-white border border-borde rounded-xl shadow-2xs space-y-1">
-          <span class="text-[11px] font-bold text-salvia uppercase tracking-wider block">Ubicación Física Actual</span>
-          <div class="flex items-center gap-2 text-sm text-verdoso">
-            <span class="font-semibold">{{ targetAve?.division?.casita?.nombre || 'Sin casita asignada' }}</span>
-            <span v-if="targetAve?.division">•</span>
-            <span v-if="targetAve?.division" class="text-salvia">{{ targetAve.division.nombre }}</span>
-          </div>
-        </div>
-
-        <!-- Observaciones -->
-        <div v-if="targetAve?.observaciones" class="p-4 bg-white border border-borde rounded-xl shadow-2xs space-y-1">
-          <span class="text-[11px] font-bold text-salvia uppercase tracking-wider block">Observaciones y Rasgos</span>
-          <p class="text-xs text-verdoso leading-relaxed whitespace-pre-line">
-            {{ targetAve.observaciones }}
-          </p>
-        </div>
-      </div>
-
-      <!-- PESTAÑA 2: CONTROL DE PESO -->
-      <div v-else-if="detalleTab === 'pesos'" class="space-y-5">
-        <!-- Formulario para agregar pesaje (Panel blanco limpio sin parches) -->
-        <div class="p-5 bg-white border border-borde rounded-2xl shadow-2xs space-y-4">
-          <div class="border-b border-borde pb-2.5 flex items-center justify-between">
-            <div>
-              <h4 class="text-sm font-bold text-verdoso">Registrar Nuevo Pesaje</h4>
-              <p class="text-xs text-verdoso-muted mt-0.5">Captura el pesaje de control para actualizar el registro del ave.</p>
-            </div>
-          </div>
-
-          <form @submit.prevent="handleSubmitPeso" class="space-y-4">
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div>
-                <FloatingInput
-                  v-model="pesoForm.fecha"
-                  type="date"
-                  label="Fecha de Pesaje *"
-                  :disabled="isSubmittingPeso"
-                />
-              </div>
-              <div>
-                <FloatingInput
-                  v-model="pesoForm.peso_kg"
-                  type="number"
-                  step="0.01"
-                  min="0.01"
-                  label="Peso (kg) *"
-                  placeholder="Ej. 2.15"
-                  :error="pesoErrors.peso_kg"
-                  :disabled="isSubmittingPeso"
-                />
-              </div>
-              <div>
-                <FloatingInput
-                  v-model="pesoForm.observaciones"
-                  label="Notas (Opcional)"
-                  placeholder="Ej. Control quincenal"
-                  :disabled="isSubmittingPeso"
-                />
-              </div>
-            </div>
-
-            <div class="flex items-center justify-end pt-1">
-              <button
-                type="submit"
-                class="px-6 py-2.5 btn-principal text-xs flex items-center gap-1.5 shadow-xs cursor-pointer font-semibold"
-                :disabled="isSubmittingPeso"
-              >
-                <Plus class="w-4 h-4" />
-                <span>Registrar Pesaje</span>
-              </button>
-            </div>
-          </form>
-        </div>
-
-        <!-- Historial de Pesajes -->
-        <div class="border border-borde rounded-2xl overflow-hidden bg-white shadow-2xs">
-          <div v-if="avesStore.loadingPesos" class="py-8 text-center text-xs text-salvia flex items-center justify-center gap-2">
-            <Loader2 class="w-4 h-4 animate-spin" />
-            Cargando historial de peso...
-          </div>
-          <div v-else-if="avesStore.pesos.length === 0" class="py-10 text-center text-xs text-verdoso-muted">
-            <Scale class="w-8 h-8 text-salvia/40 mx-auto mb-2" />
-            No hay registros de pesaje para esta ave.
-          </div>
-          <table v-else class="w-full text-left text-xs">
-            <thead class="bg-crema/60 text-salvia font-bold uppercase tracking-wider text-[11px] border-b border-borde">
-              <tr>
-                <th class="px-5 py-3">Fecha</th>
-                <th class="px-5 py-3">Peso</th>
-                <th class="px-5 py-3">Observaciones</th>
-                <th class="px-5 py-3">Registrado Por</th>
-                <th class="px-5 py-3 text-right">Acción</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-borde text-verdoso">
-              <tr v-for="p in avesStore.pesos" :key="p.id" class="hover:bg-salvia-50/30 transition-colors">
-                <td class="px-5 py-3 whitespace-nowrap">{{ formatDate(p.fecha) }}</td>
-                <td class="px-5 py-3 whitespace-nowrap text-bosque">{{ p.peso_kg }} kg</td>
-                <td class="px-5 py-3">{{ p.observaciones || '—' }}</td>
-                <td class="px-5 py-3 text-salvia">{{ p.usuario?.name || 'Sistema' }}</td>
-                <td class="px-5 py-3 text-right">
-                  <button
-                    type="button"
-                    @click="handleDeletePeso(p.id)"
-                    class="p-1.5 text-salvia hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                    title="Eliminar pesaje"
-                  >
-                    <Trash2 class="w-4 h-4" />
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- PESTAÑA 3: BITÁCORA SANITARIA -->
-      <div v-else-if="detalleTab === 'bitacora'" class="space-y-5">
-        <!-- Formulario para agregar observación (Panel blanco limpio sin parches) -->
-        <div class="p-5 bg-white border border-borde rounded-2xl shadow-2xs space-y-4">
-          <div class="border-b border-borde pb-2.5 flex items-center justify-between">
-            <div>
-              <h4 class="text-sm font-bold text-verdoso">Registrar Evento Sanitario o de Conducta</h4>
-              <p class="text-xs text-verdoso-muted mt-0.5">Bitácora de salud, vacunas, tratamientos o incidencias zootécnicas.</p>
-            </div>
-          </div>
-
-          <form @submit.prevent="handleSubmitObs" class="space-y-4">
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div>
-                <FloatingInput
-                  v-model="obsForm.fecha"
-                  type="date"
-                  label="Fecha del Evento *"
-                  :disabled="isSubmittingObs"
-                />
-              </div>
-              <div>
-                <FloatingSelect
-                  v-model="obsForm.tipo"
-                  label="Tipo de Evento *"
-                  :options="tipoObsOptions"
-                  :disabled="isSubmittingObs"
-                />
-              </div>
-              <div>
-                <FloatingInput
-                  v-model="obsForm.titulo"
-                  label="Título / Motivo *"
-                  placeholder="Ej. Revisión ocular / Vacuna"
-                  :error="obsErrors.titulo"
-                  :disabled="isSubmittingObs"
-                />
-              </div>
-            </div>
-
-            <FloatingInput
-              v-model="obsForm.descripcion"
-              type="textarea"
-              label="Descripción del Evento *"
-              placeholder="Detalle de los síntomas observados o procedimiento aplicado..."
-              :rows="2"
-              :error="obsErrors.descripcion"
-              :disabled="isSubmittingObs"
-            />
-
-            <div class="grid grid-cols-1 sm:grid-cols-12 gap-4 items-end">
-              <div class="sm:col-span-8">
-                <FloatingInput
-                  v-model="obsForm.accion_tomada"
-                  label="Acción Tomada (Opcional)"
-                  placeholder="Ej. Aislamiento temporal / Administración de vitaminas..."
-                  :disabled="isSubmittingObs"
-                />
-              </div>
-              <div class="sm:col-span-4 flex justify-end">
-                <button
-                  type="submit"
-                  class="w-full sm:w-auto px-6 py-2.5 btn-principal text-xs flex items-center justify-center gap-1.5 shadow-xs cursor-pointer font-semibold"
-                  :disabled="isSubmittingObs"
-                >
-                  <Plus class="w-4 h-4" />
-                  <span>Registrar Evento</span>
-                </button>
-              </div>
-            </div>
-          </form>
-        </div>
-
-        <!-- Timeline / Lista de Eventos -->
-        <div class="border border-borde rounded-2xl overflow-hidden p-4 bg-crema/20 space-y-3">
-          <div v-if="avesStore.loadingObservaciones" class="py-8 text-center text-xs text-salvia flex items-center justify-center gap-2">
-            <Loader2 class="w-4 h-4 animate-spin" />
-            Cargando bitácora sanitaria...
-          </div>
-          <div v-else-if="avesStore.observaciones.length === 0" class="py-10 text-center text-xs text-verdoso-muted">
-            <ClipboardList class="w-8 h-8 text-salvia/40 mx-auto mb-2" />
-            No hay eventos sanitarios u observaciones registradas para esta ave.
-          </div>
-          <div v-else class="space-y-3">
-            <div
-              v-for="obs in avesStore.observaciones"
-              :key="obs.id"
-              class="p-4 bg-white border border-borde rounded-xl shadow-2xs hover:border-salvia/60 transition-all"
-            >
-              <div class="flex items-center justify-between text-xs mb-2">
-                <div class="flex items-center gap-2">
-                  <span
-                    :class="[
-                      'px-2.5 py-0.5 rounded-full text-[10px] font-semibold border',
-                      obs.tipo === 'Salud' ? 'bg-red-50 text-red-700 border-red-200' :
-                      obs.tipo === 'Vacunación' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' :
-                      obs.tipo === 'Comportamiento' ? 'bg-blue-50 text-blue-800 border-blue-200' :
-                      obs.tipo === 'Nutrición' ? 'bg-amber-50 text-amber-800 border-amber-200' :
-                      obs.tipo === 'Incidencia' ? 'bg-orange-50 text-orange-800 border-orange-200' :
-                      'bg-salvia/15 text-bosque border-salvia/20'
-                    ]"
-                  >
-                    {{ obs.tipo }}
-                  </span>
-                  <span class="text-salvia text-[11px] font-mono">{{ formatDate(obs.fecha) }}</span>
-                </div>
-                <div class="flex items-center gap-2">
-                  <span class="text-[11px] text-verdoso-muted font-normal">{{ obs.usuario?.name || 'Sistema' }}</span>
-                  <button
-                    type="button"
-                    @click="handleDeleteObs(obs.id)"
-                    class="p-1.5 text-salvia hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                    title="Eliminar evento"
-                  >
-                    <Trash2 class="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-              <h5 class="text-sm font-semibold text-verdoso">{{ obs.titulo }}</h5>
-              <p class="text-xs text-verdoso-muted mt-1 leading-relaxed">{{ obs.descripcion }}</p>
-              <div v-if="obs.accion_tomada" class="mt-3 p-2.5 bg-salvia-50/70 border border-salvia/20 rounded-xl text-xs text-verdoso flex items-start gap-1.5">
-                <span class="font-bold text-bosque whitespace-nowrap">Acción tomada:</span>
-                <span>{{ obs.accion_tomada }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Footer CENTRADO -->
-      <template #footer>
-        <button
-          type="button"
-          @click="showDetalleModal = false"
-          class="px-6 py-2 btn-secundario text-sm"
-        >
-          Cerrar
-        </button>
-      </template>
-    </BaseModal>
-
-    <!-- MODAL 1: Registrar / Editar Ave (Usa FormField.vue con catálogos ctl_especie y ctl_sexo) -->
-    <BaseModal
+    <AveFormModal
       :is-open="showAveModal"
-      :title="isEditing ? `Editar Ave: ${aveForm.codigo}` : 'Registrar Nueva Ave'"
-      max-width="lg"
+      :ave="targetAve"
       @close="showAveModal = false"
-    >
-      <form id="ave-form" @submit.prevent="handleSubmitAve" class="space-y-4" novalidate>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <!-- Código Identificador -->
-          <FormField
-            id="ave-codigo"
-            v-model="aveForm.codigo"
-            label="Código Identificador"
-            placeholder="Ej. AVE-015"
-            required
-            :error="aveErrors.codigo"
-            @input="aveErrors.codigo = ''"
-          />
+      @saved="onAveSaved"
+    />
 
-          <!-- Sobrenombre -->
-          <FormField
-            id="ave-nombre"
-            v-model="aveForm.nombre"
-            label="Sobrenombre"
-            placeholder="Ej. Canela, Pardo"
-          />
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <!-- Especie (Catálogo ctl_especie) -->
-          <FormField
-            id="ave-especie"
-            v-model="aveForm.id_especie"
-            type="select"
-            label="Especie"
-            required
-            :options="formEspecieOptions"
-            :error="aveErrors.id_especie"
-            @input="aveErrors.id_especie = ''"
-          />
-
-          <!-- Sexo (Catálogo ctl_sexo) -->
-          <FormField
-            id="ave-sexo"
-            v-model="aveForm.id_sexo"
-            type="select"
-            label="Sexo"
-            required
-            :options="formSexoOptions"
-            :error="aveErrors.id_sexo"
-            @input="aveErrors.id_sexo = ''"
-          />
-
-          <!-- Raza -->
-          <FormField
-            id="ave-raza"
-            v-model="aveForm.raza"
-            label="Raza"
-            placeholder="Ej. Criolla"
-          />
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <!-- Propósito (Catálogo ctl_proposito) -->
-          <FormField
-            id="ave-proposito"
-            v-model="aveForm.id_proposito"
-            type="select"
-            label="Propósito"
-            :options="formPropositoOptions"
-          />
-
-          <!-- Corral / División Inicial -->
-          <FormField
-            id="ave-division"
-            v-model="aveForm.id_division"
-            type="select"
-            label="Ubicación Inicial (Corral)"
-            :options="divisionesDisponibles"
-          />
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <!-- Fecha de Ingreso -->
-          <FormField
-            id="ave-fecha-ingreso"
-            v-model="aveForm.fecha_ingreso"
-            type="date"
-            label="Fecha de Ingreso"
-          />
-
-          <!-- Peso Actual en KG -->
-          <FormField
-            id="ave-peso"
-            v-model="aveForm.peso_actual_kg"
-            type="number"
-            step="0.01"
-            label="Peso Actual (kg)"
-            placeholder="Ej. 2.15"
-          />
-        </div>
-
-        <!-- Observaciones -->
-        <FormField
-          id="ave-observaciones"
-          v-model="aveForm.observaciones"
-          type="textarea"
-          label="Observaciones y Señales Físicas"
-          placeholder="Color del plumaje, docilidad, señas particulares..."
-          :rows="2"
-        />
-      </form>
-
-      <!-- Botones CENTRADOS -->
-      <template #footer>
-        <div class="flex items-center justify-center gap-3 w-full">
-          <button
-            type="button"
-            @click="showAveModal = false"
-            class="px-6 py-2 btn-secundario text-sm"
-          >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            @click="handleSubmitAve"
-            :disabled="isSubmitting"
-            class="px-6 py-2 btn-principal text-sm shadow-xs flex items-center gap-1.5"
-          >
-            <Loader2 v-if="isSubmitting" class="w-4 h-4 animate-spin" />
-            <span>{{ isEditing ? 'Guardar Cambios' : 'Registrar Ave' }}</span>
-          </button>
-        </div>
-      </template>
-    </BaseModal>
-
-    <!-- MODAL 2: Trasladar Ave (Separación Biológica) -->
-    <BaseModal
+    <AveTrasladoModal
       :is-open="showTrasladoModal"
-      :title="`Traslado de Ave: ${targetAve?.codigo} (${targetAve?.especie?.nombre || 'Ave'})`"
-      max-width="md"
+      :ave="targetAve"
       @close="showTrasladoModal = false"
-    >
-      <form id="traslado-form" @submit.prevent="handleSubmitTraslado" class="space-y-4" novalidate>
-        <!-- Resumen de ubicación actual -->
-        <div class="p-3.5 bg-crema/60 border border-borde rounded-xl text-xs space-y-1">
-          <p class="font-bold text-verdoso">Ubicación actual:</p>
-          <p class="text-salvia">
-            {{ targetAve?.division ? `${targetAve.division.casita?.nombre} • ${targetAve.division.nombre}` : 'Sin asignación' }}
-          </p>
-        </div>
+      @trasladado="onAveTrasladada"
+    />
 
-        <!-- Selector Casita Destino -->
-        <div>
-          <label class="block text-xs font-bold text-verdoso uppercase tracking-wider mb-1">
-            Casita Destino <span class="text-red-500 ml-0.5">*</span>
-          </label>
-          <select
-            v-model="trasladoForm.id_casita_destino"
-            class="w-full px-3.5 py-2.5 border border-borde rounded-xl text-sm focus:ring-1 focus:ring-bosque focus:border-bosque outline-none bg-white text-verdoso cursor-pointer"
-          >
-            <option value="">-- Seleccionar Casita --</option>
-            <option
-              v-for="c in instalacionesStore.casitas"
-              :key="c.id"
-              :value="String(c.id)"
-            >
-              {{ c.nombre }} ({{ c.tipo || 'General' }})
-            </option>
-          </select>
-        </div>
-
-        <!-- Selector División Destino con validación de error -->
-        <div>
-          <label
-            :class="[
-              'block text-xs font-bold uppercase tracking-wider mb-1',
-              trasladoErrors.id_division_destino ? 'text-red-600' : 'text-verdoso'
-            ]"
-          >
-            Corral / División Destino <span class="text-red-500 ml-0.5">*</span>
-          </label>
-          <select
-            v-model="trasladoForm.id_division_destino"
-            :disabled="!trasladoForm.id_casita_destino"
-            @change="trasladoErrors.id_division_destino = ''"
-            :class="[
-              'w-full px-3.5 py-2.5 rounded-xl text-sm outline-none transition-colors cursor-pointer',
-              trasladoErrors.id_division_destino
-                ? 'border-2 border-red-500 focus:ring-1 focus:ring-red-500'
-                : 'border border-borde focus:ring-1 focus:ring-bosque focus:border-bosque bg-white text-verdoso',
-              !trasladoForm.id_casita_destino ? 'opacity-50 cursor-not-allowed bg-crema' : ''
-            ]"
-          >
-            <option value="">-- Seleccionar División --</option>
-            <option
-              v-for="d in divisionesTrasladoOptions"
-              :key="d.id"
-              :value="d.id"
-            >
-              {{ d.nombre }}
-            </option>
-          </select>
-          <p
-            v-if="trasladoErrors.id_division_destino"
-            class="text-xs text-red-500 font-medium mt-1 select-none"
-          >
-            {{ trasladoErrors.id_division_destino }}
-          </p>
-        </div>
-
-        <!-- Alerta preventiva si hay conflicto biológico -->
-        <div
-          v-if="advertenciaBiologica"
-          class="p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-xs flex items-start gap-2 animate-fade-in"
-        >
-          <AlertTriangle class="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
-          <span>{{ advertenciaBiologica }}</span>
-        </div>
-
-        <!-- Motivo del Traslado -->
-        <FormField
-          id="traslado-motivo"
-          v-model="trasladoForm.motivo"
-          label="Motivo del Traslado"
-          placeholder="Ej. Rotación de pastoreo, Aislamiento sanitario..."
-        />
-
-        <!-- Observaciones -->
-        <FormField
-          id="traslado-obs"
-          v-model="trasladoForm.observaciones"
-          type="textarea"
-          label="Observaciones Adicionales"
-          placeholder="Condiciones del ave al momento del traslado..."
-          :rows="2"
-        />
-      </form>
-
-      <!-- Botones CENTRADOS -->
-      <template #footer>
-        <div class="flex items-center justify-center gap-3 w-full">
-          <button
-            type="button"
-            @click="showTrasladoModal = false"
-            class="px-6 py-2 btn-secundario text-sm"
-          >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            @click="handleSubmitTraslado"
-            :disabled="isSubmitting || !!advertenciaBiologica"
-            class="px-6 py-2 btn-principal text-sm shadow-xs flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Loader2 v-if="isSubmitting" class="w-4 h-4 animate-spin" />
-            <span>Confirmar Traslado</span>
-          </button>
-        </div>
-      </template>
-    </BaseModal>
-
-    <!-- MODAL 3: Historial Cronológico de Movimientos (Ojito 👁️) -->
-    <BaseModal
+    <AveMovimientosModal
       :is-open="showMovimientosModal"
-      :title="`Historial de Traslados: ${targetAve?.codigo} (${targetAve?.nombre || targetAve?.especie?.nombre || 'Ave'})`"
-      max-width="lg"
+      :ave="targetAve"
       @close="showMovimientosModal = false"
-    >
-      <div v-if="avesStore.loadingMovimientos" class="p-8 text-center">
-        <Loader2 class="w-6 h-6 animate-spin mx-auto text-bosque mb-2" />
-        <p class="text-xs text-verdoso-muted">Cargando movimientos históricos...</p>
-      </div>
+    />
 
-      <div v-else-if="avesStore.movimientos.length === 0" class="p-8 text-center text-verdoso-muted text-sm">
-        No se registran movimientos para esta ave.
-      </div>
+    <AveBajaModal
+      :is-open="showBajaModal"
+      :ave="targetAve"
+      @close="showBajaModal = false"
+      @confirmed="onAveBajaConfirmed"
+    />
 
-      <div v-else class="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
-        <div
-          v-for="mov in avesStore.movimientos"
-          :key="mov.id"
-          class="p-4 bg-crema/40 border border-borde rounded-2xl space-y-2 hover:bg-crema/70 transition-colors"
-        >
-          <div class="flex items-center justify-between text-xs">
-            <span class="font-bold text-verdoso flex items-center gap-1">
-              <Calendar class="w-3.5 h-3.5 text-salvia" />
-              {{ formatDate(mov.fecha) }}
-            </span>
-            <div class="flex items-center gap-2">
-              <span
-                v-if="mov.motivo"
-                :class="[
-                  'px-2 py-0.5 rounded-full text-[10px] font-bold border',
-                  mov.motivo.toLowerCase().includes('reingreso')
-                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                    : mov.motivo.toLowerCase().includes('baja') || mov.motivo.toLowerCase().includes('salida')
-                    ? 'bg-red-50 text-red-800 border-red-200'
-                    : 'bg-bosque-50 text-bosque border-bosque/20'
-                ]"
-              >
-                {{ mov.motivo }}
-              </span>
-              <span class="text-salvia font-mono">#{{ mov.id }}</span>
-            </div>
-          </div>
-
-          <div class="flex items-center gap-2 text-xs font-semibold text-verdoso">
-            <span class="text-salvia">De:</span>
-            <span>
-              {{
-                mov.division_origen
-                  ? `${mov.division_origen.casita?.nombre ? mov.division_origen.casita.nombre + ' • ' : ''}${mov.division_origen.nombre}`
-                  : (mov.motivo?.toLowerCase().includes('reingreso') ? 'Reingreso (Fuera de plantel)' : 'Ingreso inicial')
-              }}
-            </span>
-            <ArrowRightLeft class="w-3.5 h-3.5 text-bosque" />
-            <span class="text-salvia">A:</span>
-            <span class="text-bosque">
-              {{
-                mov.division_destino
-                  ? `${mov.division_destino.casita?.nombre ? mov.division_destino.casita.nombre + ' • ' : ''}${mov.division_destino.nombre}`
-                  : (mov.motivo?.toLowerCase().includes('baja') || mov.motivo?.toLowerCase().includes('salida') ? 'Baja / Salida' : 'Sin asignación inicial')
-              }}
-            </span>
-          </div>
-
-          <p v-if="mov.motivo" class="text-xs text-verdoso-muted">
-            <span class="font-semibold text-verdoso">Motivo:</span> {{ mov.motivo }}
-          </p>
-
-          <p v-if="mov.observaciones" class="text-xs text-verdoso-muted italic">
-            {{ mov.observaciones }}
-          </p>
-        </div>
-      </div>
-
-      <!-- Footer CENTRADO -->
-      <template #footer>
-        <button
-          type="button"
-          @click="showMovimientosModal = false"
-          class="px-6 py-2 btn-secundario text-sm"
-        >
-          Cerrar
-        </button>
-      </template>
-    </BaseModal>
-
-    <!-- MODAL 4: Dar de Baja a Ave (Genera Movimiento de Salida) -->
-    <BaseModal
-      :is-open="showDeleteModal"
-      title="Dar de Baja a Ave"
-      max-width="md"
-      @close="showDeleteModal = false"
-    >
-      <form id="baja-form" @submit.prevent="handleConfirmDelete" class="space-y-4">
-        <div class="p-4 bg-red-50 border border-red-200 rounded-2xl flex items-start gap-3">
-          <Trash2 class="w-5 h-5 text-red-700 mt-0.5 shrink-0" />
-          <div class="text-xs text-red-900 space-y-1">
-            <p class="font-bold text-sm">
-              ¿Dar de baja a {{ targetAve?.codigo }} ({{ targetAve?.nombre || targetAve?.especie?.nombre }})?
-            </p>
-            <p>
-              El ave pasará a estado <strong>Baja</strong> y se registrará automáticamente su movimiento de <strong>Baja / Salida</strong> en el historial.
-            </p>
-          </div>
-        </div>
-
-        <FormField
-          id="baja-motivo"
-          v-model="bajaForm.motivo"
-          label="Motivo de la Baja"
-          placeholder="Ej. Baja / Salida, Venta, Muerte natural, Descarte"
-          :disabled="isSubmitting"
-        />
-
-        <FormField
-          id="baja-obs"
-          v-model="bajaForm.observaciones"
-          type="textarea"
-          label="Observaciones (Opcional)"
-          placeholder="Detalles sobre el estado o causa de la baja..."
-          :rows="2"
-          :disabled="isSubmitting"
-        />
-      </form>
-
-      <template #footer>
-        <button
-          type="button"
-          @click="showDeleteModal = false"
-          :disabled="isSubmitting"
-          class="px-5 py-2 btn-secundario text-sm cursor-pointer"
-        >
-          Cancelar
-        </button>
-        <button
-          type="button"
-          @click="handleConfirmDelete"
-          :disabled="isSubmitting"
-          class="px-6 py-2 bg-red-700 text-white hover:bg-red-800 rounded-xl font-medium text-sm shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
-        >
-          <Loader2 v-if="isSubmitting" class="w-4 h-4 animate-spin" />
-          <Trash2 v-else class="w-4 h-4" />
-          <span>Confirmar Baja</span>
-        </button>
-      </template>
-    </BaseModal>
-
-    <!-- MODAL 5: Reactivar e Incorporar Ave (Genera Movimiento de Reingreso) -->
-    <BaseModal
+    <AveReactivarModal
       :is-open="showReactivarModal"
-      title="Reactivar e Incorporar Ave"
-      max-width="md"
+      :ave="targetAve"
       @close="showReactivarModal = false"
-    >
-      <form id="reactivar-form" @submit.prevent="handleConfirmReactivar" class="space-y-4">
-        <div class="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-start gap-3">
-          <RotateCcw class="w-5 h-5 text-emerald-700 mt-0.5 shrink-0" />
-          <div class="text-xs text-emerald-900 space-y-1">
-            <p class="font-bold text-sm">
-              ¿Reactivar al ave {{ targetAve?.codigo }} ({{ targetAve?.nombre || targetAve?.especie?.nombre }})?
-            </p>
-            <p>
-              El ave volverá a estar <strong>Activa</strong> y se generará automáticamente su movimiento de <strong>Reingreso</strong> en el historial.
-            </p>
-          </div>
-        </div>
+      @confirmed="onAveReactivadaConfirmed"
+    />
 
-        <!-- Asignación de corral opcional -->
-        <FormField
-          id="reactivar-division"
-          v-model="reactivarForm.id_division_destino"
-          type="select"
-          label="Corral / División de Destino"
-          :options="divisionesDisponibles"
-          :disabled="isSubmitting"
-        />
-
-        <!-- Observaciones de reingreso -->
-        <FormField
-          id="reactivar-obs"
-          v-model="reactivarForm.observaciones"
-          type="textarea"
-          label="Observaciones del Reingreso (Opcional)"
-          placeholder="Ej. Ave recuperada, retorno de cuarentena, etc."
-          :rows="2"
-          :disabled="isSubmitting"
-        />
-      </form>
-
-      <template #footer>
-        <button
-          type="button"
-          @click="showReactivarModal = false"
-          :disabled="isSubmitting"
-          class="px-5 py-2 btn-secundario text-sm cursor-pointer"
-        >
-          Cancelar
-        </button>
-        <button
-          type="button"
-          @click="handleConfirmReactivar"
-          :disabled="isSubmitting"
-          class="px-6 py-2 btn-principal text-sm shadow-xs flex items-center gap-1.5 cursor-pointer"
-        >
-          <Loader2 v-if="isSubmitting" class="w-4 h-4 animate-spin" />
-          <RotateCcw v-else class="w-4 h-4" />
-          <span>Confirmar Reingreso</span>
-        </button>
-      </template>
-    </BaseModal>
-
-    <!-- Overlay de Carga Global Corporativo -->
+    <!-- Overlay de Carga Global Corporativo (provide/inject) -->
     <ActionLoader
-      :show="showActionLoader"
+      :is-open="isSubmitting"
       :message="actionLoaderMessage"
     />
   </div>

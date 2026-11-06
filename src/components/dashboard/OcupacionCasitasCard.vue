@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import SectionCard from '@/components/common/SectionCard.vue'
 import ProgressBar from '@/components/common/ProgressBar.vue'
+import StatusBadge from '@/components/common/StatusBadge.vue'
 
 const props = defineProps({
   ocupacion: { type: Array, required: true },
@@ -37,12 +38,7 @@ const totalAves = computed(() => props.ocupacion.reduce((acc, c) => acc + c.tota
           >
             <span class="flex items-center gap-2 min-w-0">
               <span class="font-medium text-verdoso truncate">{{ d.division }}</span>
-              <span
-                v-if="!d.activa"
-                class="px-2 py-0.5 rounded-full bg-[#FEE2E2] text-[#991B1B] font-semibold shrink-0"
-              >
-                Inactiva
-              </span>
+              <StatusBadge v-if="!d.activa" variant="danger" size="sm" class="shrink-0">Inactiva</StatusBadge>
               <span v-if="d.especies.length" class="text-verdoso-muted truncate">
                 {{ d.especies.join(', ') }}
               </span>
