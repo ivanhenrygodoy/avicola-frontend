@@ -15,18 +15,17 @@ import FloatingSelect from '@/components/common/FloatingSelect.vue'
 import FormField from '@/components/common/FormField.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
 import AppHeader from '@/components/common/AppHeader.vue'
-import GallinaIcon from '@/components/common/GallinaIcon.vue'
+import LoadingState from '@/components/common/LoadingState.vue'
+import EmptyState from '@/components/common/EmptyState.vue'
+import { formatMoney } from '@/utils/format'
 
 // Iconos Lucide
 import {
   DollarSign,
   Receipt,
   Tag,
-  Plus,
   Pencil,
   Trash2,
-  Search,
-  SearchX,
   Calendar,
 } from 'lucide-vue-next'
 
@@ -94,6 +93,15 @@ const divisionFiltroOptions = computed(() => {
   })
   return options
 })
+
+// Configuración de la barra de filtros (FilterBar la dibuja)
+const filterFields = computed(() => [
+  { key: 'search', type: 'search', label: 'Buscar por concepto o proveedor' },
+  { key: 'id_categoria_gasto', type: 'select', label: 'Categoría de Gasto', options: categoriaFiltroOptions.value },
+  { key: 'id_division', type: 'select', label: 'Corral / División', options: divisionFiltroOptions.value },
+  { key: 'fecha_inicio', type: 'date', label: 'Desde' },
+  { key: 'fecha_fin', type: 'date', label: 'Hasta' },
+])
 
 const divisionFormOptions = computed(() => {
   const options = [{ value: '', label: '-- General (Toda la granja) --' }]
@@ -288,12 +296,12 @@ onMounted(async () => {
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <StatCard
           title="Total Gastos (Filtro Actual)"
-          :value="`$${(gastosStore.stats.total_gastos || 0).toFixed(2)}`"
+          :value="formatMoney(gastosStore.stats.total_gastos)"
           value-color-class="text-bosque"
         />
         <StatCard
           title="Total del Mes Actual"
-          :value="`$${(gastosStore.stats.total_mes_actual || 0).toFixed(2)}`"
+          :value="formatMoney(gastosStore.stats.total_mes_actual)"
           value-color-class="text-verdoso"
         />
         <StatCard
@@ -305,73 +313,18 @@ onMounted(async () => {
 
       <!-- Barra de Filtros Reutilizable con FilterBar Component -->
       <FilterBar
+        v-model="gastosStore.filters"
+        :fields="filterFields"
         :loading="gastosStore.loading"
+        action-label="Registrar gasto"
         @search="handleSearch"
         @clear="handleClear"
-      >
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3.5">
-          <!-- Búsqueda libre por texto -->
-          <FloatingInput
-            v-model="gastosStore.filters.search"
-            label="Buscar por concepto o proveedor"
-            :icon="Search"
-            @enter="handleSearch"
-          />
-
-          <!-- Categoría -->
-          <FloatingSelect
-            v-model="gastosStore.filters.id_categoria_gasto"
-            label="Categoría de Gasto"
-            :options="categoriaFiltroOptions"
-          />
-
-          <!-- División / Corral -->
-          <FloatingSelect
-            v-model="gastosStore.filters.id_division"
-            label="Corral / División"
-            :options="divisionFiltroOptions"
-          />
-
-          <!-- Fecha Inicio -->
-          <FloatingInput
-            v-model="gastosStore.filters.fecha_inicio"
-            label="Desde"
-            type="date"
-            @enter="handleSearch"
-          />
-
-          <!-- Fecha Fin -->
-          <FloatingInput
-            v-model="gastosStore.filters.fecha_fin"
-            label="Hasta"
-            type="date"
-            @enter="handleSearch"
-          />
-        </div>
-
-        <template #action>
-          <button
-            type="button"
-            @click="openCreateModal"
-            class="px-5 py-2.5 btn-principal text-sm shadow-xs flex items-center gap-1.5 ml-1 cursor-pointer"
-          >
-            <Plus class="w-4 h-4" />
-            <span>Registrar gasto</span>
-          </button>
-        </template>
-      </FilterBar>
+        @action="openCreateModal"
+      />
 
       <!-- Tabla de Gastos -->
       <div class="bg-white rounded-2xl border border-borde shadow-xs overflow-hidden">
-        <!-- Indicador de Carga Estandarizado con Imagotipo Corporativo (SOLID) -->
-        <div v-if="gastosStore.loading" class="p-12 text-center flex flex-col items-center justify-center">
-          <div class="relative w-14 h-14 flex items-center justify-center mb-3">
-            <div class="absolute inset-0 rounded-full border-4 border-borde border-t-[#244B36] border-r-[#6F9678] animate-spin"></div>
-            <GallinaIcon class="w-7 h-7 text-bosque animate-pulse select-none" />
-          </div>
-          <p class="text-sm font-bold text-verdoso">Consultando registros...</p>
-          <p class="text-xs text-verdoso-muted mt-1">Por favor, espere un momento mientras se actualiza el listado.</p>
-        </div>
+        <LoadingState v-if="gastosStore.loading" />
 
         <div v-else class="overflow-x-auto">
           <table class="w-full text-left text-sm">
@@ -424,7 +377,7 @@ onMounted(async () => {
 
                 <!-- Monto -->
                 <td class="px-6 py-4 whitespace-nowrap text-right text-verdoso">
-                  ${{ Number(item.monto).toFixed(2) }}
+                  {{ formatMoney(item.monto) }}
                 </td>
 
                 <!-- Proveedor -->
@@ -457,14 +410,11 @@ onMounted(async () => {
 
               <!-- Estado Vacío -->
               <tr v-if="gastosStore.gastos.length === 0">
-                <td colspan="7" class="px-6 py-12 text-center text-verdoso-muted">
-                  <div class="flex flex-col items-center justify-center">
-                    <SearchX class="w-10 h-10 text-salvia/40 mb-2" />
-                    <p class="text-sm font-semibold text-verdoso">No se encontraron gastos</p>
-                    <p class="text-xs text-verdoso-muted mt-0.5">
-                      Intenta ajustar los filtros de búsqueda o registra un nuevo gasto.
-                    </p>
-                  </div>
+                <td colspan="7" class="px-6 py-14 text-center">
+                  <EmptyState
+                    title="No se encontraron gastos"
+                    description="Intenta ajustar los filtros de búsqueda o registra un nuevo gasto."
+                  />
                 </td>
               </tr>
             </tbody>
@@ -587,7 +537,7 @@ onMounted(async () => {
     <BaseConfirmModal
       :is-open="showDeleteModal"
       title="Eliminar Gasto"
-      :message="`¿Estás seguro de que deseas eliminar el gasto por concepto de '${deleteTarget?.concepto}' por valor de $${Number(deleteTarget?.monto || 0).toFixed(2)}? Esta acción no se puede deshacer.`"
+      :message="`¿Estás seguro de que deseas eliminar el gasto por concepto de '${deleteTarget?.concepto}' por valor de ${formatMoney(deleteTarget?.monto)}? Esta acción no se puede deshacer.`"
       confirm-text="Sí, eliminar"
       cancel-text="Cancelar"
       :is-loading="isSubmitting"

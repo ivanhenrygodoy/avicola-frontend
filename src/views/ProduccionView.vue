@@ -11,22 +11,19 @@ import BaseConfirmModal from '@/components/common/BaseConfirmModal.vue'
 import ActionLoader from '@/components/common/ActionLoader.vue'
 import PaginationBar from '@/components/common/PaginationBar.vue'
 import StatCard from '@/components/common/StatCard.vue'
-import FloatingInput from '@/components/common/FloatingInput.vue'
-import FloatingSelect from '@/components/common/FloatingSelect.vue'
 import FormField from '@/components/common/FormField.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
 import AppHeader from '@/components/common/AppHeader.vue'
-import GallinaIcon from '@/components/common/GallinaIcon.vue'
+import LoadingState from '@/components/common/LoadingState.vue'
+import EmptyState from '@/components/common/EmptyState.vue'
+import { formatMoney, formatMoneyOrDash } from '@/utils/format'
 
 // Iconos Lucide
 import {
   Egg,
   Wheat,
-  Plus,
   Pencil,
   Trash2,
-  Search,
-  SearchX,
   AlertCircle,
   Loader2,
 } from 'lucide-vue-next'
@@ -125,6 +122,23 @@ const tiposAlimentoFiltroOptions = computed(() => {
     label: t.nombre,
   }))
 })
+
+// Configuración de las barras de filtros (FilterBar las dibuja).
+// `show` conserva el interruptor del buscador libre, oculto por defecto en ambas secciones.
+const filterFieldsHuevos = computed(() => [
+  { key: 'search', type: 'search', label: 'Buscar', show: showSearchFilterHuevos.value },
+  { key: 'id_division', type: 'select', label: 'Corral / División', options: divisionFiltroOptions.value },
+  { key: 'fecha_inicio', type: 'date', label: 'Desde' },
+  { key: 'fecha_fin', type: 'date', label: 'Hasta' },
+])
+
+const filterFieldsAlimentacion = computed(() => [
+  { key: 'search', type: 'search', label: 'Buscar', show: showSearchFilterAlimentacion.value },
+  { key: 'id_division', type: 'select', label: 'Corral / División', options: divisionFiltroOptions.value },
+  { key: 'id_tipo_alimento', type: 'select', label: 'Tipo de Alimento', options: tiposAlimentoFiltroOptions.value },
+  { key: 'fecha_inicio', type: 'date', label: 'Desde' },
+  { key: 'fecha_fin', type: 'date', label: 'Hasta' },
+])
 
 // Opciones de Tipos de Alimento para formulario
 const formTipoAlimentoOptions = computed(() => {
@@ -509,67 +523,18 @@ const executeDelete = async () => {
 
         <!-- Barra de Filtros Reutilizable con FilterBar Component (SOLID - Estándar Idéntico) -->
         <FilterBar
+          v-model="produccionStore.filtersHuevos"
+          :fields="filterFieldsHuevos"
           :loading="produccionStore.loading"
+          action-label="Registrar postura"
           @search="handleSearchHuevos"
           @clear="handleClearHuevos"
-        >
-          <div
-            class="grid gap-4"
-            :class="showSearchFilterHuevos ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4' : 'grid-cols-1 sm:grid-cols-3'"
-          >
-            <!-- Búsqueda libre por texto (Oculto por defecto en esta sección, activable dinámicamente) -->
-            <FloatingInput
-              v-if="showSearchFilterHuevos"
-              v-model="produccionStore.filtersHuevos.search"
-              label="Buscar"
-              :icon="Search"
-              @enter="handleSearchHuevos"
-            />
-            <!-- División -->
-            <FloatingSelect
-              v-model="produccionStore.filtersHuevos.id_division"
-              label="Corral / División"
-              :options="divisionFiltroOptions"
-            />
-            <!-- Desde -->
-            <FloatingInput
-              v-model="produccionStore.filtersHuevos.fecha_inicio"
-              label="Desde"
-              type="date"
-              @enter="handleSearchHuevos"
-            />
-            <!-- Hasta -->
-            <FloatingInput
-              v-model="produccionStore.filtersHuevos.fecha_fin"
-              label="Hasta"
-              type="date"
-              @enter="handleSearchHuevos"
-            />
-          </div>
-
-          <template #action>
-            <button
-              type="button"
-              @click="openCreateHuevoModal"
-              class="px-5 py-2.5 btn-principal text-sm shadow-xs flex items-center gap-1.5 ml-1 cursor-pointer"
-            >
-              <Plus class="w-4 h-4" />
-              <span>Registrar postura</span>
-            </button>
-          </template>
-        </FilterBar>
+          @action="openCreateHuevoModal"
+        />
 
         <!-- Tabla de Registros de Postura -->
         <div class="bg-white rounded-2xl border border-borde shadow-xs overflow-hidden">
-          <!-- Indicador de Carga Estandarizado con Imagotipo Corporativo (SOLID) -->
-          <div v-if="produccionStore.loading" class="p-12 text-center flex flex-col items-center justify-center">
-            <div class="relative w-14 h-14 flex items-center justify-center mb-3">
-              <div class="absolute inset-0 rounded-full border-4 border-borde border-t-[#244B36] border-r-[#6F9678] animate-spin"></div>
-              <GallinaIcon class="w-7 h-7 text-bosque animate-pulse select-none" />
-            </div>
-            <p class="text-sm font-bold text-verdoso">Consultando registros...</p>
-            <p class="text-xs text-verdoso-muted mt-1">Por favor, espere un momento mientras se actualiza el listado.</p>
-          </div>
+          <LoadingState v-if="produccionStore.loading" />
 
           <div v-else class="overflow-x-auto">
             <table class="w-full text-left text-sm">
@@ -658,12 +623,11 @@ const executeDelete = async () => {
 
                 <!-- Estado Vacío -->
                 <tr v-if="produccionStore.huevos.length === 0">
-                  <td colspan="7" class="px-6 py-12 text-center text-verdoso-muted">
-                    <div class="max-w-xs mx-auto space-y-2">
-                      <SearchX class="w-8 h-8 text-salvia mx-auto" />
-                      <p class="font-medium text-verdoso">No hay registros de postura</p>
-                      <p class="text-xs">No se encontraron recolecciones de huevos con los filtros seleccionados.</p>
-                    </div>
+                  <td colspan="7" class="px-6 py-14 text-center">
+                    <EmptyState
+                      title="No hay registros de postura"
+                      description="No se encontraron recolecciones de huevos con los filtros seleccionados."
+                    />
                   </td>
                 </tr>
               </tbody>
@@ -696,7 +660,7 @@ const executeDelete = async () => {
           />
           <StatCard
             title="Inversión Estimada en Alimento"
-            :value="'$' + (Number(produccionStore.statsAlimentacion.total_costo || 0).toFixed(2))"
+            :value="formatMoney(produccionStore.statsAlimentacion.total_costo)"
           />
           <StatCard
             title="Total Raciones Registradas"
@@ -706,69 +670,18 @@ const executeDelete = async () => {
 
         <!-- Filtros Alimentación Reutilizables (SOLID - Estándar Idéntico) -->
         <FilterBar
+          v-model="produccionStore.filtersAlimentacion"
+          :fields="filterFieldsAlimentacion"
           :loading="produccionStore.loading"
+          action-label="Registrar ración"
           @search="handleSearchAlimentacion"
           @clear="handleClearAlimentacion"
-        >
-          <div
-            class="grid gap-3"
-            :class="showSearchFilterAlimentacion ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-5' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4'"
-          >
-            <!-- Búsqueda libre por texto (Oculto por defecto en esta sección, activable dinámicamente) -->
-            <FloatingInput
-              v-if="showSearchFilterAlimentacion"
-              v-model="produccionStore.filtersAlimentacion.search"
-              label="Buscar"
-              :icon="Search"
-              @enter="handleSearchAlimentacion"
-            />
-            <FloatingSelect
-              v-model="produccionStore.filtersAlimentacion.id_division"
-              label="Corral / División"
-              :options="divisionFiltroOptions"
-            />
-            <FloatingSelect
-              v-model="produccionStore.filtersAlimentacion.id_tipo_alimento"
-              label="Tipo de Alimento"
-              :options="tiposAlimentoFiltroOptions"
-            />
-            <FloatingInput
-              v-model="produccionStore.filtersAlimentacion.fecha_inicio"
-              label="Desde"
-              type="date"
-              @enter="handleSearchAlimentacion"
-            />
-            <FloatingInput
-              v-model="produccionStore.filtersAlimentacion.fecha_fin"
-              label="Hasta"
-              type="date"
-              @enter="handleSearchAlimentacion"
-            />
-          </div>
-
-          <template #action>
-            <button
-              type="button"
-              @click="openCreateAlimentacionModal"
-              class="px-5 py-2.5 btn-principal text-sm shadow-xs flex items-center gap-1.5 ml-1 cursor-pointer"
-            >
-              <Plus class="w-4 h-4" />
-              <span>Registrar ración</span>
-            </button>
-          </template>
-        </FilterBar>
+          @action="openCreateAlimentacionModal"
+        />
 
         <!-- Tabla de Registros de Alimentación -->
         <div class="bg-white rounded-2xl border border-borde shadow-xs overflow-hidden">
-          <!-- Indicador de Carga Estandarizado con Imagotipo Corporativo (SOLID) -->
-          <div v-if="produccionStore.loading" class="p-12 text-center flex flex-col items-center justify-center">
-            <div class="relative w-14 h-14 flex items-center justify-center mb-3">
-              <div class="absolute inset-0 rounded-full border-4 border-borde border-t-[#244B36] border-r-[#6F9678] animate-spin"></div>
-              <GallinaIcon class="w-7 h-7 text-bosque animate-pulse select-none" />
-            </div>
-            <p class="text-sm font-bold text-verdoso">Consultando registros...</p>
-            <p class="text-xs text-verdoso-muted mt-1">Por favor, espere un momento mientras se actualiza el listado.</p>
-          </div>
+          <LoadingState v-if="produccionStore.loading" />
 
           <div v-else class="overflow-x-auto">
             <table class="w-full text-left text-sm">
@@ -816,7 +729,7 @@ const executeDelete = async () => {
 
                   <!-- Costo -->
                   <td class="px-6 py-4 whitespace-nowrap text-center text-xs text-verdoso-muted">
-                    {{ item.costo_total ? '$' + Number(item.costo_total).toFixed(2) : '—' }}
+                    {{ formatMoneyOrDash(item.costo_total) }}
                   </td>
 
                   <!-- Observaciones -->
@@ -849,12 +762,11 @@ const executeDelete = async () => {
 
                 <!-- Estado Vacío -->
                 <tr v-if="produccionStore.alimentacion.length === 0">
-                  <td colspan="7" class="px-6 py-12 text-center text-verdoso-muted">
-                    <div class="max-w-xs mx-auto space-y-2">
-                      <SearchX class="w-8 h-8 text-salvia mx-auto" />
-                      <p class="font-medium text-verdoso">No hay registros de alimentación</p>
-                      <p class="text-xs">No se encontraron raciones registradas para el filtro indicado.</p>
-                    </div>
+                  <td colspan="7" class="px-6 py-14 text-center">
+                    <EmptyState
+                      title="No hay registros de alimentación"
+                      description="No se encontraron raciones registradas para el filtro indicado."
+                    />
                   </td>
                 </tr>
               </tbody>

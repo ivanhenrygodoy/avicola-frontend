@@ -18,7 +18,9 @@ import FormField from '@/components/common/FormField.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
 import AvesStats from '@/components/aves/AvesStats.vue'
 import AppHeader from '@/components/common/AppHeader.vue'
-import GallinaIcon from '@/components/common/GallinaIcon.vue'
+import LoadingState from '@/components/common/LoadingState.vue'
+import EmptyState from '@/components/common/EmptyState.vue'
+import { formatDate } from '@/utils/format'
 
 // Iconos Lucide
 import {
@@ -26,7 +28,6 @@ import {
   LayoutDashboard,
   Layers,
   Plus,
-  Search,
   Eye,
   History,
   Pencil,
@@ -41,7 +42,6 @@ import {
   AlertTriangle,
   Calendar,
   Scale,
-  SearchX,
   FileText,
   Activity,
   ClipboardList,
@@ -147,6 +147,14 @@ const estadoFiltroOptions = [
   { value: 'activa', label: 'Activas' },
   { value: 'salida', label: 'Bajas' },
 ]
+
+// Configuración de la barra de filtros (FilterBar la dibuja)
+const filterFields = computed(() => [
+  { key: 'search', type: 'search', label: 'Buscar' },
+  { key: 'id_especie', type: 'select', label: 'Especie', options: especieFiltroOptions.value },
+  { key: 'id_sexo', type: 'select', label: 'Sexo', options: sexoFiltroOptions.value },
+  { key: 'estado', type: 'select', label: 'Estado del Ave', options: estadoFiltroOptions },
+])
 
 // Divisiones agrupadas para el formulario de Ave
 const divisionesDisponibles = computed(() => {
@@ -609,21 +617,6 @@ const handleConfirmReactivar = async () => {
   }
 }
 
-// Formateo de fechas
-const formatDate = (dateString) => {
-  if (!dateString) return '—'
-  if (typeof dateString === 'string' && /^\d{2}-\d{2}-\d{4}$/.test(dateString)) {
-    return dateString
-  }
-  const date = new Date(dateString)
-  if (isNaN(date.getTime())) return dateString
-  return date.toLocaleDateString('es-ES', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  })
-}
-
 // Logout
 const handleLogout = async () => {
   await authStore.logout()
@@ -643,63 +636,18 @@ const handleLogout = async () => {
 
       <!-- Barra de Filtros Reutilizable con FilterBar Component (SOLID) -->
       <FilterBar
+        v-model="avesStore.filters"
+        :fields="filterFields"
         :loading="avesStore.loading"
+        action-label="Registrar ave"
         @search="handleSearch"
         @clear="handleClear"
-      >
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <!-- Búsqueda por código, nombre o raza con lupa (en blanco) -->
-          <FloatingInput
-            v-model="avesStore.filters.search"
-            label="Buscar"
-            :icon="Search"
-            @enter="handleSearch"
-          />
-
-          <!-- Filtro Especie (Catálogo ctl_especie sin icono, vacío por defecto) -->
-          <FloatingSelect
-            v-model="avesStore.filters.id_especie"
-            label="Especie"
-            :options="especieFiltroOptions"
-          />
-
-          <!-- Filtro Sexo (Catálogo ctl_sexo, vacío por defecto) -->
-          <FloatingSelect
-            v-model="avesStore.filters.id_sexo"
-            label="Sexo"
-            :options="sexoFiltroOptions"
-          />
-
-          <!-- Filtro Estado (Vacío inicialmente, sin 'Todos los estados') -->
-          <FloatingSelect
-            v-model="avesStore.filters.estado"
-            label="Estado del Ave"
-            :options="estadoFiltroOptions"
-          />
-        </div>
-
-        <template #action>
-          <button
-            @click="openCreateAve"
-            class="px-5 py-2.5 btn-principal text-sm shadow-xs flex items-center gap-1.5 ml-1"
-          >
-            <Plus class="w-4 h-4" />
-            <span>Registrar ave</span>
-          </button>
-        </template>
-      </FilterBar>
+        @action="openCreateAve"
+      />
 
       <!-- Tabla de Inventario de Aves -->
       <div class="bg-white rounded-2xl border border-borde shadow-xs overflow-hidden">
-        <!-- Indicador de Carga Estandarizado con Imagotipo Corporativo GallinaIcon -->
-        <div v-if="avesStore.loading" class="p-12 text-center flex flex-col items-center justify-center">
-          <div class="relative w-14 h-14 flex items-center justify-center mb-3">
-            <div class="absolute inset-0 rounded-full border-4 border-borde border-t-[#244B36] border-r-[#6F9678] animate-spin"></div>
-            <GallinaIcon class="w-7 h-7 text-bosque animate-pulse select-none" />
-          </div>
-          <p class="text-sm font-bold text-verdoso">Consultando registros...</p>
-          <p class="text-xs text-verdoso-muted mt-1">Por favor, espere un momento mientras se actualiza el listado.</p>
-        </div>
+        <LoadingState v-if="avesStore.loading" />
 
         <div v-else class="overflow-x-auto">
           <table class="w-full text-left text-sm">
@@ -720,22 +668,12 @@ const handleLogout = async () => {
               <!-- Estado vacío mejorado (Empty State - Impeccable) -->
               <tr v-if="avesStore.aves.length === 0">
                 <td colspan="8" class="px-6 py-14 text-center">
-                  <div class="max-w-xs mx-auto flex flex-col items-center gap-3">
-                    <div class="w-12 h-12 rounded-full bg-salvia-50 flex items-center justify-center text-salvia border border-borde">
-                      <SearchX class="w-6 h-6" />
-                    </div>
-                    <div class="space-y-1">
-                      <p class="text-sm font-bold text-verdoso">Sin resultados en el inventario</p>
-                      <p class="text-xs text-verdoso-muted">No se encontraron aves con los criterios de búsqueda seleccionados.</p>
-                    </div>
-                    <button
-                      type="button"
-                      @click="handleClear"
-                      class="mt-1 px-4 py-1.5 text-xs font-semibold text-bosque bg-salvia-50 hover:bg-salvia-100 rounded-full border border-salvia/40 transition-colors cursor-pointer"
-                    >
-                      Limpiar filtros
-                    </button>
-                  </div>
+                  <EmptyState
+                    title="Sin resultados en el inventario"
+                    description="No se encontraron aves con los criterios de búsqueda seleccionados."
+                    action-label="Limpiar filtros"
+                    @action="handleClear"
+                  />
                 </td>
               </tr>
 

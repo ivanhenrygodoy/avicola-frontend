@@ -12,13 +12,13 @@ import ConfirmStatusModal from '@/components/common/ConfirmStatusModal.vue'
 import ActionLoader from '@/components/common/ActionLoader.vue'
 import PaginationBar from '@/components/common/PaginationBar.vue'
 import StatCard from '@/components/common/StatCard.vue'
-import FloatingInput from '@/components/common/FloatingInput.vue'
-import FloatingSelect from '@/components/common/FloatingSelect.vue'
 import FormField from '@/components/common/FormField.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
 import InstalacionesStats from '@/components/instalaciones/InstalacionesStats.vue'
 import AppHeader from '@/components/common/AppHeader.vue'
-import GallinaIcon from '@/components/common/GallinaIcon.vue'
+import LoadingState from '@/components/common/LoadingState.vue'
+import EmptyState from '@/components/common/EmptyState.vue'
+import { formatDate } from '@/utils/format'
 
 // Iconos
 import {
@@ -32,11 +32,9 @@ import {
   LayoutDashboard,
   Building,
   Loader2,
-  Search,
   Eye,
   Pencil,
   Trash2,
-  SearchX,
 } from 'lucide-vue-next'
 
 const router = useRouter()
@@ -230,6 +228,13 @@ const estadoOptions = [
   { value: 'false', label: 'Inactiva' },
 ]
 
+// Configuración de la barra de filtros (FilterBar la dibuja)
+const filterFields = computed(() => [
+  { key: 'buscar', type: 'search', label: 'Buscar' },
+  { key: 'tipo', type: 'select', label: 'Tipo de instalación', options: tipoOptions.value },
+  { key: 'activa', type: 'select', label: 'Estado', options: estadoOptions },
+])
+
 onMounted(async () => {
   await Promise.all([
     store.fetchTiposInstalacion(),
@@ -382,17 +387,6 @@ const handleSubmitDivision = async () => {
   }
 }
 
-// Formateo de fecha
-const formatDate = (isoString) => {
-  if (!isoString) return '24/01/2026'
-  const date = new Date(isoString)
-  return date.toLocaleDateString('es-ES', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  })
-}
-
 const handleLogout = async () => {
   await authStore.logout()
   router.push({ name: 'login' })
@@ -421,56 +415,18 @@ const handleLogout = async () => {
 
       <!-- Barra de Filtros Reutilizable con FilterBar Component (SOLID) -->
       <FilterBar
+        v-model="store.filters"
+        :fields="filterFields"
         :loading="store.loading"
+        action-label="Nueva casita"
         @search="handleSearch"
         @clear="handleClear"
-      >
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <!-- Buscar (configurable con prop placeholder, en blanco por defecto) -->
-          <FloatingInput
-            v-model="store.filters.buscar"
-            label="Buscar"
-            :icon="Search"
-            @enter="handleSearch"
-          />
-
-          <!-- Tipo de Instalación -->
-          <FloatingSelect
-            v-model="store.filters.tipo"
-            label="Tipo de instalación"
-            :options="tipoOptions"
-          />
-
-          <!-- Estado -->
-          <FloatingSelect
-            v-model="store.filters.activa"
-            label="Estado"
-            :options="estadoOptions"
-          />
-        </div>
-
-        <template #action>
-          <button
-            @click="openCreateCasita"
-            class="px-5 py-2.5 btn-principal text-sm shadow-xs flex items-center gap-1.5 ml-1"
-          >
-            <Plus class="w-4 h-4" />
-            <span>Nueva casita</span>
-          </button>
-        </template>
-      </FilterBar>
+        @action="openCreateCasita"
+      />
 
       <!-- Tabla de Listado -->
       <div class="bg-white rounded-2xl border border-borde shadow-xs overflow-hidden">
-        <!-- Indicador de Carga Estandarizado con Imagotipo Corporativo GallinaIcon -->
-        <div v-if="store.loading" class="p-12 text-center flex flex-col items-center justify-center">
-          <div class="relative w-14 h-14 flex items-center justify-center mb-3">
-            <div class="absolute inset-0 rounded-full border-4 border-borde border-t-[#244B36] border-r-[#6F9678] animate-spin"></div>
-            <GallinaIcon class="w-7 h-7 text-bosque animate-pulse select-none" />
-          </div>
-          <p class="text-sm font-bold text-verdoso">Consultando registros...</p>
-          <p class="text-xs text-verdoso-muted mt-1">Por favor, espere un momento mientras se actualiza el listado.</p>
-        </div>
+        <LoadingState v-if="store.loading" />
 
         <div v-else class="overflow-x-auto">
           <table class="w-full text-left text-sm">
@@ -491,22 +447,12 @@ const handleLogout = async () => {
                 class="hover:bg-crema/40 transition-colors"
               >
                 <td colspan="6" class="px-6 py-14 text-center">
-                  <div class="max-w-xs mx-auto flex flex-col items-center gap-3">
-                    <div class="w-12 h-12 rounded-full bg-salvia-50 flex items-center justify-center text-salvia border border-borde">
-                      <SearchX class="w-6 h-6" />
-                    </div>
-                    <div class="space-y-1">
-                      <p class="text-sm font-bold text-verdoso">Sin resultados de casitas</p>
-                      <p class="text-xs text-verdoso-muted">No se encontraron casitas o galpones con los filtros aplicados.</p>
-                    </div>
-                    <button
-                      type="button"
-                      @click="handleClear"
-                      class="mt-1 px-4 py-1.5 text-xs font-semibold text-bosque bg-salvia-50 hover:bg-salvia-100 rounded-full border border-salvia/40 transition-colors cursor-pointer"
-                    >
-                      Limpiar filtros
-                    </button>
-                  </div>
+                  <EmptyState
+                    title="Sin resultados de casitas"
+                    description="No se encontraron casitas o galpones con los filtros aplicados."
+                    action-label="Limpiar filtros"
+                    @action="handleClear"
+                  />
                 </td>
               </tr>
 
