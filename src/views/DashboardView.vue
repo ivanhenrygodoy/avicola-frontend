@@ -4,6 +4,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useInstalacionesStore } from '@/stores/instalaciones'
 import { useAvesStore } from '@/stores/aves'
 import { useProduccionStore } from '@/stores/produccion'
+import { useGastosStore } from '@/stores/gastos'
 import AppHeader from '@/components/common/AppHeader.vue'
 import GallinaIcon from '@/components/common/GallinaIcon.vue'
 import StatCard from '@/components/common/StatCard.vue'
@@ -12,12 +13,14 @@ import {
   ArrowRight,
   Calendar,
   Egg,
+  DollarSign,
 } from 'lucide-vue-next'
 
 const authStore = useAuthStore()
 const instalacionesStore = useInstalacionesStore()
 const avesStore = useAvesStore()
 const produccionStore = useProduccionStore()
+const gastosStore = useGastosStore()
 
 const loadingStats = ref(true)
 
@@ -32,6 +35,7 @@ onMounted(async () => {
     promises.push(avesStore.fetchAves())
     promises.push(produccionStore.fetchHuevos())
     promises.push(produccionStore.fetchAlimentacion())
+    promises.push(gastosStore.fetchGastos())
     await Promise.allSettled(promises)
   } finally {
     loadingStats.value = false
@@ -44,6 +48,7 @@ const fechaActual = new Intl.DateTimeFormat('es-ES', {
   year: 'numeric',
   month: 'long',
   day: 'numeric',
+  timeZone: 'America/El_Salvador',
 }).format(new Date())
 
 const fechaFormateada = fechaActual.charAt(0).toUpperCase() + fechaActual.slice(1)
@@ -55,7 +60,7 @@ const fechaFormateada = fechaActual.charAt(0).toUpperCase() + fechaActual.slice(
     <AppHeader subtitle="Panel de Control" />
 
     <!-- Contenido Principal -->
-    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <main class="flex-1 max-w-[1600px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       <!-- Encabezado de Bienvenida y Estado Operativo -->
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2">
         <div>
@@ -63,7 +68,7 @@ const fechaFormateada = fechaActual.charAt(0).toUpperCase() + fechaActual.slice(
             Bienvenido, {{ authStore.user?.name || 'Administrador' }}
           </h2>
           <p class="text-sm text-verdoso-muted mt-1">
-            Supervisión integral de corrales, bioseguridad, postura y raciones diarias.
+            Supervisión integral de corrales, bioseguridad, postura, raciones diarias y control de gastos.
           </p>
         </div>
 
@@ -82,7 +87,7 @@ const fechaFormateada = fechaActual.charAt(0).toUpperCase() + fechaActual.slice(
       <!-- Resumen Operativo de la Granja (KPIs en tiempo real) -->
       <section aria-labelledby="kpis-title">
         <h3 id="kpis-title" class="sr-only">Indicadores clave de la granja</h3>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           <StatCard
             title="Total Casitas"
             :value="instalacionesStore.stats.total_casitas || instalacionesStore.casitas.length || 0"
@@ -102,6 +107,11 @@ const fechaFormateada = fechaActual.charAt(0).toUpperCase() + fechaActual.slice(
             :value="(produccionStore.statsAlimentacion.total_kilos || 0) + ' kg'"
             value-color-class="text-verdoso"
           />
+          <StatCard
+            title="Gastos del Mes"
+            :value="`$${(gastosStore.stats.total_mes_actual || 0).toFixed(2)}`"
+            value-color-class="text-amber-800"
+          />
         </div>
       </section>
 
@@ -114,7 +124,7 @@ const fechaFormateada = fechaActual.charAt(0).toUpperCase() + fechaActual.slice(
           <span class="text-xs text-verdoso-muted">Acceso directo a gestión</span>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <!-- Tarjeta Módulo 1: Instalaciones Físicas -->
           <router-link
             to="/instalaciones"
@@ -166,7 +176,7 @@ const fechaFormateada = fechaActual.charAt(0).toUpperCase() + fechaActual.slice(
                   Inventario de Aves
                 </h4>
                 <p class="text-xs text-verdoso-muted leading-relaxed mt-2">
-                  Registro por código y nombre, trazabilidad sanitaria y traslados con validación de especie.
+                  Registro por código y nombre, seguimiento de peso individual, bitácora sanitaria y traslados.
                 </p>
               </div>
             </div>
@@ -177,7 +187,7 @@ const fechaFormateada = fechaActual.charAt(0).toUpperCase() + fechaActual.slice(
             </div>
           </router-link>
 
-          <!-- Tarjeta Módulo 3: Alimentación y Producción (Etapa 4) -->
+          <!-- Tarjeta Módulo 3: Alimentación y Producción -->
           <router-link
             to="/produccion"
             class="group bg-white p-6 rounded-2xl border border-borde hover:border-salvia hover:shadow-xs transition-all duration-200 flex flex-col justify-between"
@@ -204,6 +214,37 @@ const fechaFormateada = fechaActual.charAt(0).toUpperCase() + fechaActual.slice(
 
             <div class="pt-5 mt-5 border-t border-borde flex items-center justify-between text-xs font-semibold text-bosque group-hover:text-bosque-hover">
               <span>Gestionar producción y raciones</span>
+              <ArrowRight class="w-4 h-4 group-hover:translate-x-1.5 transition-transform duration-200" />
+            </div>
+          </router-link>
+
+          <!-- Tarjeta Módulo 4: Finanzas y Gastos Operativos (Etapa 5) -->
+          <router-link
+            to="/gastos"
+            class="group bg-white p-6 rounded-2xl border border-borde hover:border-salvia hover:shadow-xs transition-all duration-200 flex flex-col justify-between"
+          >
+            <div class="space-y-4">
+              <div class="flex items-center justify-between">
+                <div class="w-12 h-12 rounded-xl bg-bosque-50 text-bosque flex items-center justify-center group-hover:bg-bosque group-hover:text-white transition-colors duration-200">
+                  <DollarSign class="w-6 h-6 transition-colors duration-200" />
+                </div>
+                <span class="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-bosque-50 text-bosque border border-bosque/10">
+                  ${{ (gastosStore.stats.total_mes_actual || 0).toFixed(2) }} este mes
+                </span>
+              </div>
+
+              <div>
+                <h4 class="text-lg font-bold text-verdoso group-hover:text-bosque transition-colors">
+                  Finanzas y Gastos
+                </h4>
+                <p class="text-xs text-verdoso-muted leading-relaxed mt-2">
+                  Registro de egresos por alimentación, insumos veterinarios, herramientas y mantenimiento.
+                </p>
+              </div>
+            </div>
+
+            <div class="pt-5 mt-5 border-t border-borde flex items-center justify-between text-xs font-semibold text-bosque group-hover:text-bosque-hover">
+              <span>Gestionar gastos operativos</span>
               <ArrowRight class="w-4 h-4 group-hover:translate-x-1.5 transition-transform duration-200" />
             </div>
           </router-link>

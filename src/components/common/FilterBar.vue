@@ -22,15 +22,15 @@ defineEmits(['search', 'clear'])
 </script>
 
 <template>
-  <div class="bg-white rounded-2xl border border-borde p-4 sm:p-6 shadow-xs space-y-4">
-    <div class="flex flex-col lg:flex-row gap-4 justify-between items-stretch lg:items-center">
+  <div class="bg-white rounded-2xl border border-borde p-4 sm:p-5 shadow-xs">
+    <div class="flex flex-col xl:flex-row gap-4 justify-between items-stretch xl:items-center">
       <!-- Filtros dinámicos -->
       <div class="flex-1">
         <slot />
       </div>
 
       <!-- Botones de Acción del Filtro y Acción Principal -->
-      <div class="flex items-center gap-2 justify-end self-end lg:self-center pt-2 lg:pt-0">
+      <div class="flex items-center gap-2 justify-end self-end xl:self-center shrink-0 pt-2 xl:pt-0">
         <button
           type="button"
           @click="$emit('search')"

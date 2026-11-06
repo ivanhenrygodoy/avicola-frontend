@@ -13,7 +13,11 @@ const props = defineProps({
   },
   maxWidth: {
     type: String,
-    default: 'md', // sm, md, lg, xl, 2xl
+    default: 'md', // sm, md, lg, xl, 2xl, 3xl, 4xl, 5xl, 6xl, 7xl, full, auto
+  },
+  size: {
+    type: String,
+    default: '', // alias for maxWidth
   },
   closable: {
     type: Boolean,
@@ -23,19 +27,35 @@ const props = defineProps({
     type: Boolean,
     default: true,
   },
+  contentClass: {
+    type: String,
+    default: '',
+  },
 })
 
 const emit = defineEmits(['close'])
 
 const maxWidthClass = computed(() => {
+  const val = (props.size || props.maxWidth || '').toLowerCase().trim()
   const map = {
+    xs: 'max-w-xs',
     sm: 'max-w-sm',
     md: 'max-w-md',
     lg: 'max-w-lg',
     xl: 'max-w-xl',
     '2xl': 'max-w-2xl',
+    '3xl': 'max-w-3xl',
+    '4xl': 'max-w-4xl',
+    '5xl': 'max-w-5xl',
+    '6xl': 'max-w-6xl',
+    '7xl': 'max-w-7xl',
+    full: 'max-w-[96vw]',
+    auto: 'w-auto max-w-[95vw]',
+    adaptive: 'w-full max-w-4xl',
   }
-  return map[props.maxWidth] || 'max-w-md'
+  if (map[val]) return map[val]
+  if (val.startsWith('max-w-')) return val
+  return 'max-w-md'
 })
 
 const handleClose = () => {
@@ -69,11 +89,12 @@ const handleClose = () => {
           aria-hidden="true"
         />
 
-        <!-- Tarjeta del Modal con animación propia suave y sombra profunda -->
+        <!-- Tarjeta del Modal con animación propia suave y tamaño adaptable -->
         <div
           :class="[
-            'relative z-10 bg-white rounded-3xl w-full shadow-2xl border border-borde p-6 mx-auto my-auto flex flex-col max-h-[90vh] text-left text-verdoso modal-content-animated',
-            maxWidthClass
+            'relative z-10 bg-white rounded-3xl w-full shadow-2xl border border-borde p-6 mx-auto my-auto flex flex-col max-h-[90vh] text-left text-verdoso modal-content-animated transition-all duration-200',
+            maxWidthClass,
+            contentClass
           ]"
         >
           <!-- Encabezado del Modal -->
@@ -96,7 +117,7 @@ const handleClose = () => {
             </button>
           </div>
 
-          <!-- Contenido del Modal (Cuerpo) -->
+          <!-- Contenido del Modal (Cuerpo) con scroll suave -->
           <div class="py-4 flex-1 overflow-y-auto">
             <slot />
           </div>

@@ -18,6 +18,14 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  error: {
+    type: String,
+    default: '',
+  },
+  labelBgClass: {
+    type: String,
+    default: 'bg-white',
+  },
 })
 
 defineEmits(['update:modelValue'])
@@ -34,10 +42,14 @@ const cleanOptions = computed(() => {
 </script>
 
 <template>
-  <div class="relative pt-1">
-    <!-- Floating notch label con corte blanco limpio sobre el borde -->
+  <div class="relative pt-1 text-left w-full">
+    <!-- Floating notch label con corte limpio sobre el borde -->
     <label
-      class="absolute -top-1.5 left-4 z-10 px-1.5 bg-white text-xs font-semibold text-salvia pointer-events-none select-none inline-block leading-none"
+      :class="[
+        'absolute -top-1.5 left-4 z-10 px-1.5 text-xs font-semibold pointer-events-none select-none inline-block leading-none transition-colors',
+        labelBgClass,
+        error ? 'text-red-600 font-bold' : 'text-salvia'
+      ]"
     >
       {{ label }}
     </label>
@@ -47,7 +59,12 @@ const cleanOptions = computed(() => {
         :value="modelValue"
         :disabled="disabled"
         @change="$emit('update:modelValue', $event.target.value)"
-        class="w-full px-3.5 py-2.5 rounded-xl border border-borde text-sm text-verdoso bg-white focus:outline-none focus:border-bosque focus:ring-1 focus:ring-bosque transition-all cursor-pointer disabled:bg-crema disabled:cursor-not-allowed appearance-none"
+        :class="[
+          'w-full pl-3.5 pr-12 py-2.5 rounded-xl border text-sm text-verdoso bg-white focus:outline-none transition-all cursor-pointer disabled:bg-crema disabled:cursor-not-allowed appearance-none',
+          error
+            ? 'border-red-500 focus:border-red-600 focus:ring-1 focus:ring-red-500'
+            : 'border-borde focus:border-bosque focus:ring-1 focus:ring-bosque'
+        ]"
       >
         <!-- Opción invisible para que en estado inicial se muestre limpio sin figurar en el desplegable -->
         <option value="" disabled hidden></option>
@@ -81,6 +98,10 @@ const cleanOptions = computed(() => {
         </svg>
       </div>
     </div>
+
+    <!-- Error inline debajo del select -->
+    <p v-if="error" class="text-xs text-red-600 mt-1 pl-1 font-medium">
+      {{ error }}
+    </p>
   </div>
 </template>
-

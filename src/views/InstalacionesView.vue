@@ -405,7 +405,7 @@ const handleLogout = async () => {
     <AppHeader subtitle="Instalaciones y Corrales" />
 
     <!-- Contenido Principal -->
-    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+    <main class="flex-1 max-w-[1600px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       <!-- Título Central Corporativo (#26332B) -->
       <div class="text-center pt-2 pb-1">
         <h2 class="text-2xl sm:text-3xl font-extrabold text-verdoso tracking-tight">

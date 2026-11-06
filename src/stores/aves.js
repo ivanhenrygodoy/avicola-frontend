@@ -36,8 +36,12 @@ export const useAvesStore = defineStore('aves', {
     },
     selectedAve: null,
     movimientos: [],
+    pesos: [],
+    observaciones: [],
     loading: false,
     loadingMovimientos: false,
+    loadingPesos: false,
+    loadingObservaciones: false,
     error: null,
   }),
 
@@ -164,6 +168,54 @@ export const useAvesStore = defineStore('aves', {
       } finally {
         this.loadingMovimientos = false
       }
+    },
+
+    async fetchPesos(idAve) {
+      this.loadingPesos = true
+      try {
+        const data = await avesService.getPesosAve(idAve)
+        this.pesos = data || []
+        return this.pesos
+      } finally {
+        this.loadingPesos = false
+      }
+    },
+
+    async addPeso(idAve, payload) {
+      const res = await avesService.addPesoAve(idAve, payload)
+      await this.fetchPesos(idAve)
+      await this.fetchAves()
+      return res
+    },
+
+    async deletePeso(idAve, idPeso) {
+      const res = await avesService.deletePesoAve(idPeso)
+      await this.fetchPesos(idAve)
+      await this.fetchAves()
+      return res
+    },
+
+    async fetchObservaciones(idAve) {
+      this.loadingObservaciones = true
+      try {
+        const data = await avesService.getObservacionesAve(idAve)
+        this.observaciones = data || []
+        return this.observaciones
+      } finally {
+        this.loadingObservaciones = false
+      }
+    },
+
+    async addObservacion(idAve, payload) {
+      const res = await avesService.addObservacionAve(idAve, payload)
+      await this.fetchObservaciones(idAve)
+      return res
+    },
+
+    async deleteObservacion(idAve, idObs) {
+      const res = await avesService.deleteObservacionAve(idObs)
+      await this.fetchObservaciones(idAve)
+      return res
     },
 
     setSelectedAve(ave) {

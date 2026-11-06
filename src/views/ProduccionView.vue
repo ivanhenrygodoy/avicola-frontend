@@ -437,7 +437,7 @@ const executeDelete = async () => {
     <!-- Navbar Superior -->
     <AppHeader subtitle="Alimentación y Postura" />
 
-    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+    <main class="flex-1 max-w-[1600px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       <!-- Selector de Pestañas Principal -->
       <div class="flex items-center justify-between flex-wrap gap-4 border-b border-borde pb-4">
         <div>

@@ -8,6 +8,7 @@ import {
   Home,
   Layers,
   Egg,
+  DollarSign,
   User,
   LogOut,
   Menu,
@@ -61,6 +62,12 @@ const navItems = [
     icon: Egg,
     exact: false,
   },
+  {
+    name: 'Gastos',
+    to: '/gastos',
+    icon: DollarSign,
+    exact: false,
+  },
 ]
 
 const isActive = (item) => {
@@ -73,7 +80,7 @@ const isActive = (item) => {
 
 <template>
   <header class="bg-white border-b border-borde sticky top-0 z-30 shadow-xs">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+    <div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
       <!-- Identidad y Navegación Principal -->
       <div class="flex items-center gap-6">
         <!-- Logo y Título de la Granja -->

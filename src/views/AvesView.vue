@@ -42,6 +42,9 @@ import {
   Calendar,
   Scale,
   SearchX,
+  FileText,
+  Activity,
+  ClipboardList,
 } from 'lucide-vue-next'
 
 const router = useRouter()
@@ -391,10 +394,138 @@ const handleSubmitTraslado = async () => {
   }
 }
 
-// Modal Detalle Completo del Ave (Sólo Lectura - El Ojito 👁️)
-const openDetalle = (ave) => {
+// Pestañas de la Ficha Técnica (Ojito 👁️)
+const detalleTab = ref('ficha') // 'ficha' | 'pesos' | 'bitacora'
+
+// Formulario de pesaje
+const defaultPesoForm = () => ({
+  fecha: new Date().toISOString().split('T')[0],
+  peso_kg: '',
+  observaciones: '',
+})
+const pesoForm = ref(defaultPesoForm())
+const pesoErrors = ref({ peso_kg: '' })
+const isSubmittingPeso = ref(false)
+
+// Formulario de bitácora sanitaria
+const tipoObsOptions = [
+  { value: 'Salud', label: 'Salud' },
+  { value: 'Comportamiento', label: 'Comportamiento' },
+  { value: 'Vacunación', label: 'Vacunación' },
+  { value: 'Incidencia', label: 'Incidencia' },
+  { value: 'Nutrición', label: 'Nutrición' },
+  { value: 'General', label: 'General' },
+]
+
+const defaultObsForm = () => ({
+  fecha: new Date().toISOString().split('T')[0],
+  tipo: 'Salud',
+  titulo: '',
+  descripcion: '',
+  accion_tomada: '',
+})
+const obsForm = ref(defaultObsForm())
+const obsErrors = ref({ titulo: '', descripcion: '' })
+const isSubmittingObs = ref(false)
+
+// Modal Detalle Completo del Ave (Ojito 👁️ con Pestañas)
+const openDetalle = async (ave) => {
   targetAve.value = ave
+  detalleTab.value = 'ficha'
+  pesoForm.value = defaultPesoForm()
+  obsForm.value = defaultObsForm()
+  pesoErrors.value = { peso_kg: '' }
+  obsErrors.value = { titulo: '', descripcion: '' }
   showDetalleModal.value = true
+
+  try {
+    await Promise.all([
+      avesStore.fetchPesos(ave.id),
+      avesStore.fetchObservaciones(ave.id),
+    ])
+  } catch (err) {
+    console.error('Error cargando historial de seguimiento:', err)
+  }
+}
+
+const handleSubmitPeso = async () => {
+  pesoErrors.value = { peso_kg: '' }
+  if (!pesoForm.value.peso_kg || Number(pesoForm.value.peso_kg) <= 0) {
+    pesoErrors.value.peso_kg = 'Ingresa un peso válido mayor a 0 kg'
+    return
+  }
+
+  isSubmittingPeso.value = true
+  try {
+    const res = await avesStore.addPeso(targetAve.value.id, {
+      fecha: pesoForm.value.fecha,
+      peso_kg: Number(pesoForm.value.peso_kg),
+      observaciones: pesoForm.value.observaciones || null,
+    })
+    if (res?.ave?.peso_actual_kg !== undefined) {
+      targetAve.value.peso_actual_kg = res.ave.peso_actual_kg
+    }
+    notify.success('Pesaje registrado correctamente.')
+    pesoForm.value = defaultPesoForm()
+  } catch (err) {
+    console.error('Error al registrar peso:', err)
+    notify.error('No se pudo registrar el pesaje.')
+  } finally {
+    isSubmittingPeso.value = false
+  }
+}
+
+const handleDeletePeso = async (idPeso) => {
+  try {
+    const res = await avesStore.deletePeso(targetAve.value.id, idPeso)
+    if (res?.ave?.peso_actual_kg !== undefined) {
+      targetAve.value.peso_actual_kg = res.ave.peso_actual_kg
+    }
+    notify.success('Registro de pesaje eliminado.')
+  } catch (err) {
+    console.error('Error eliminando pesaje:', err)
+    notify.error('No se pudo eliminar el pesaje.')
+  }
+}
+
+const handleSubmitObs = async () => {
+  obsErrors.value = { titulo: '', descripcion: '' }
+  if (!obsForm.value.titulo.trim()) {
+    obsErrors.value.titulo = 'El título o motivo es obligatorio'
+    return
+  }
+  if (!obsForm.value.descripcion.trim()) {
+    obsErrors.value.descripcion = 'La descripción es obligatoria'
+    return
+  }
+
+  isSubmittingObs.value = true
+  try {
+    await avesStore.addObservacion(targetAve.value.id, {
+      fecha: obsForm.value.fecha,
+      tipo: obsForm.value.tipo,
+      titulo: obsForm.value.titulo.trim(),
+      descripcion: obsForm.value.descripcion.trim(),
+      accion_tomada: obsForm.value.accion_tomada?.trim() || null,
+    })
+    notify.success('Evento de bitácora registrado.')
+    obsForm.value = defaultObsForm()
+  } catch (err) {
+    console.error('Error registrando observación:', err)
+    notify.error('No se pudo registrar la observación.')
+  } finally {
+    isSubmittingObs.value = false
+  }
+}
+
+const handleDeleteObs = async (idObs) => {
+  try {
+    await avesStore.deleteObservacion(targetAve.value.id, idObs)
+    notify.success('Registro de bitácora eliminado.')
+  } catch (err) {
+    console.error('Error eliminando evento:', err)
+    notify.error('No se pudo eliminar el registro.')
+  }
 }
 
 // Modal Ver Historial de Movimientos
@@ -481,7 +612,11 @@ const handleConfirmReactivar = async () => {
 // Formateo de fechas
 const formatDate = (dateString) => {
   if (!dateString) return '—'
+  if (typeof dateString === 'string' && /^\d{2}-\d{2}-\d{4}$/.test(dateString)) {
+    return dateString
+  }
   const date = new Date(dateString)
+  if (isNaN(date.getTime())) return dateString
   return date.toLocaleDateString('es-ES', {
     day: '2-digit',
     month: '2-digit',
@@ -502,7 +637,7 @@ const handleLogout = async () => {
     <AppHeader subtitle="Inventario de Aves" />
 
     <!-- Contenido Principal -->
-    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+    <main class="flex-1 max-w-[1600px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       <!-- Estadísticas Reutilizables de Inventario de Aves (SOLID) -->
       <AvesStats :stats="avesStore.stats" />
 
@@ -738,41 +873,95 @@ const handleLogout = async () => {
       </div>
     </main>
 
-    <!-- MODAL 0: Ficha Técnica Detallada del Ave (Sólo Lectura - Ojito 👁️) -->
+    <!-- MODAL 0: Ficha Técnica Detallada del Ave (Pestañas: Ficha, Pesos, Bitácora - Ojito 👁️) -->
     <BaseModal
       :is-open="showDetalleModal && !!targetAve"
-      max-width="lg"
+      max-width="4xl"
       @close="showDetalleModal = false"
     >
       <template #header>
-        <div>
-          <div class="flex items-center gap-2">
-            <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-salvia/20 text-bosque">
-              {{ targetAve?.especie?.nombre || 'Ave' }}
-            </span>
-            <span
-              :class="[
-                'px-2 py-0.5 rounded-full text-xs font-semibold',
-                targetAve?.estado === 'activa' ? 'bg-[#DDF3E3] text-bosque' : 'bg-[#FEE2E2] text-red-800'
-              ]"
-            >
-              {{ targetAve?.estado === 'activa' ? 'Activa' : 'Baja' }}
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-salvia/15 text-bosque border border-salvia/20">
+                {{ targetAve?.especie?.nombre || 'Ave' }}
+              </span>
+              <span
+                :class="[
+                  'px-2.5 py-0.5 rounded-full text-xs font-semibold border',
+                  targetAve?.estado === 'activa'
+                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                    : 'bg-red-50 text-red-800 border-red-200'
+                ]"
+              >
+                {{ targetAve?.estado === 'activa' ? 'Activa' : 'Baja' }}
+              </span>
+            </div>
+            <span class="text-xs text-verdoso-muted font-mono">
+              Código: <span class="font-bold text-verdoso">{{ targetAve?.codigo }}</span>
             </span>
           </div>
-          <h3 class="text-xl font-bold text-verdoso mt-1">
+
+          <h3 class="text-xl font-bold text-verdoso">
             {{ targetAve?.nombre ? `"${targetAve?.nombre}"` : targetAve?.codigo }}
           </h3>
-          <p class="text-xs text-verdoso-muted font-mono mt-0.5">
-            Código Identificador: <span class="font-bold text-verdoso">{{ targetAve?.codigo }}</span>
-          </p>
+
+          <!-- Navegación de Pestañas Ergonómica (SOLID - Impeccable) -->
+          <div class="flex items-center gap-2 border-b border-borde pt-1">
+            <button
+              type="button"
+              @click="detalleTab = 'ficha'"
+              :class="[
+                'px-4 py-2.5 text-xs font-semibold rounded-t-xl transition-all border-b-2 flex items-center gap-2 cursor-pointer',
+                detalleTab === 'ficha'
+                  ? 'border-bosque text-bosque bg-salvia-50/60 font-bold'
+                  : 'border-transparent text-verdoso-muted hover:text-verdoso hover:bg-salvia-50/20'
+              ]"
+            >
+              <FileText class="w-4 h-4" />
+              <span>Ficha General</span>
+            </button>
+            <button
+              type="button"
+              @click="detalleTab = 'pesos'"
+              :class="[
+                'px-4 py-2.5 text-xs font-semibold rounded-t-xl transition-all border-b-2 flex items-center gap-2 cursor-pointer',
+                detalleTab === 'pesos'
+                  ? 'border-bosque text-bosque bg-salvia-50/60 font-bold'
+                  : 'border-transparent text-verdoso-muted hover:text-verdoso hover:bg-salvia-50/20'
+              ]"
+            >
+              <Scale class="w-4 h-4" />
+              <span>Control de Peso</span>
+              <span class="px-2 py-0.5 rounded-full text-[11px] bg-salvia/20 text-bosque font-bold">
+                {{ avesStore.pesos.length }}
+              </span>
+            </button>
+            <button
+              type="button"
+              @click="detalleTab = 'bitacora'"
+              :class="[
+                'px-4 py-2.5 text-xs font-semibold rounded-t-xl transition-all border-b-2 flex items-center gap-2 cursor-pointer',
+                detalleTab === 'bitacora'
+                  ? 'border-bosque text-bosque bg-salvia-50/60 font-bold'
+                  : 'border-transparent text-verdoso-muted hover:text-verdoso hover:bg-salvia-50/20'
+              ]"
+            >
+              <ClipboardList class="w-4 h-4" />
+              <span>Bitácora Sanitaria</span>
+              <span class="px-2 py-0.5 rounded-full text-[11px] bg-salvia/20 text-bosque font-bold">
+                {{ avesStore.observaciones.length }}
+              </span>
+            </button>
+          </div>
         </div>
       </template>
 
-      <!-- Ficha Técnica en Grid de Solo Lectura -->
-      <div class="space-y-4">
+      <!-- PESTAÑA 1: FICHA GENERAL (Solo Lectura) -->
+      <div v-if="detalleTab === 'ficha'" class="space-y-4">
         <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
           <!-- Especie -->
-          <div class="p-3 bg-crema/40 border border-borde rounded-xl">
+          <div class="p-3.5 bg-white border border-borde rounded-xl shadow-2xs">
             <span class="text-[11px] font-bold text-salvia uppercase tracking-wider block">Especie</span>
             <span class="text-sm font-semibold text-verdoso mt-0.5 block">
               {{ targetAve?.especie?.nombre || '—' }}
@@ -780,7 +969,7 @@ const handleLogout = async () => {
           </div>
 
           <!-- Sexo -->
-          <div class="p-3 bg-crema/40 border border-borde rounded-xl">
+          <div class="p-3.5 bg-white border border-borde rounded-xl shadow-2xs">
             <span class="text-[11px] font-bold text-salvia uppercase tracking-wider block">Sexo</span>
             <span class="text-sm font-semibold text-verdoso mt-0.5 block">
               {{ targetAve?.sexo?.nombre || '—' }}
@@ -788,7 +977,7 @@ const handleLogout = async () => {
           </div>
 
           <!-- Raza -->
-          <div class="p-3 bg-crema/40 border border-borde rounded-xl">
+          <div class="p-3.5 bg-white border border-borde rounded-xl shadow-2xs">
             <span class="text-[11px] font-bold text-salvia uppercase tracking-wider block">Raza</span>
             <span class="text-sm font-semibold text-verdoso mt-0.5 block">
               {{ targetAve?.raza || 'Criolla' }}
@@ -796,7 +985,7 @@ const handleLogout = async () => {
           </div>
 
           <!-- Propósito -->
-          <div class="p-3 bg-crema/40 border border-borde rounded-xl">
+          <div class="p-3.5 bg-white border border-borde rounded-xl shadow-2xs">
             <span class="text-[11px] font-bold text-salvia uppercase tracking-wider block">Propósito</span>
             <span class="text-sm font-semibold text-verdoso mt-0.5 block">
               {{ targetAve?.proposito?.nombre || '—' }}
@@ -804,15 +993,15 @@ const handleLogout = async () => {
           </div>
 
           <!-- Peso Actual -->
-          <div class="p-3 bg-crema/40 border border-borde rounded-xl">
+          <div class="p-3.5 bg-white border border-borde rounded-xl shadow-2xs">
             <span class="text-[11px] font-bold text-salvia uppercase tracking-wider block">Peso Actual</span>
-            <span class="text-sm font-semibold text-verdoso mt-0.5 block">
+            <span class="text-sm font-semibold text-bosque mt-0.5 block">
               {{ targetAve?.peso_actual_kg ? `${targetAve.peso_actual_kg} kg` : 'No registrado' }}
             </span>
           </div>
 
           <!-- Fecha de Ingreso -->
-          <div class="p-3 bg-crema/40 border border-borde rounded-xl">
+          <div class="p-3.5 bg-white border border-borde rounded-xl shadow-2xs">
             <span class="text-[11px] font-bold text-salvia uppercase tracking-wider block">Fecha de Ingreso</span>
             <span class="text-sm font-semibold text-verdoso mt-0.5 block">
               {{ formatDate(targetAve?.fecha_ingreso) }}
@@ -821,21 +1010,248 @@ const handleLogout = async () => {
         </div>
 
         <!-- Ubicación Física Actual (Casita y Corral) -->
-        <div class="p-4 bg-crema/40 border border-borde rounded-xl space-y-1">
+        <div class="p-4 bg-white border border-borde rounded-xl shadow-2xs space-y-1">
           <span class="text-[11px] font-bold text-salvia uppercase tracking-wider block">Ubicación Física Actual</span>
-          <div class="flex items-center gap-2 text-sm text-verdoso font-semibold">
-            <span>{{ targetAve?.division?.casita?.nombre || 'Sin casita asignada' }}</span>
+          <div class="flex items-center gap-2 text-sm text-verdoso">
+            <span class="font-semibold">{{ targetAve?.division?.casita?.nombre || 'Sin casita asignada' }}</span>
             <span v-if="targetAve?.division">•</span>
-            <span v-if="targetAve?.division" class="text-salvia font-normal">{{ targetAve.division.nombre }}</span>
+            <span v-if="targetAve?.division" class="text-salvia">{{ targetAve.division.nombre }}</span>
           </div>
         </div>
 
         <!-- Observaciones -->
-        <div v-if="targetAve?.observaciones" class="p-4 bg-crema/40 border border-borde rounded-xl space-y-1">
+        <div v-if="targetAve?.observaciones" class="p-4 bg-white border border-borde rounded-xl shadow-2xs space-y-1">
           <span class="text-[11px] font-bold text-salvia uppercase tracking-wider block">Observaciones y Rasgos</span>
           <p class="text-xs text-verdoso leading-relaxed whitespace-pre-line">
             {{ targetAve.observaciones }}
           </p>
+        </div>
+      </div>
+
+      <!-- PESTAÑA 2: CONTROL DE PESO -->
+      <div v-else-if="detalleTab === 'pesos'" class="space-y-5">
+        <!-- Formulario para agregar pesaje (Panel blanco limpio sin parches) -->
+        <div class="p-5 bg-white border border-borde rounded-2xl shadow-2xs space-y-4">
+          <div class="border-b border-borde pb-2.5 flex items-center justify-between">
+            <div>
+              <h4 class="text-sm font-bold text-verdoso">Registrar Nuevo Pesaje</h4>
+              <p class="text-xs text-verdoso-muted mt-0.5">Captura el pesaje de control para actualizar el registro del ave.</p>
+            </div>
+          </div>
+
+          <form @submit.prevent="handleSubmitPeso" class="space-y-4">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <FloatingInput
+                  v-model="pesoForm.fecha"
+                  type="date"
+                  label="Fecha de Pesaje *"
+                  :disabled="isSubmittingPeso"
+                />
+              </div>
+              <div>
+                <FloatingInput
+                  v-model="pesoForm.peso_kg"
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  label="Peso (kg) *"
+                  placeholder="Ej. 2.15"
+                  :error="pesoErrors.peso_kg"
+                  :disabled="isSubmittingPeso"
+                />
+              </div>
+              <div>
+                <FloatingInput
+                  v-model="pesoForm.observaciones"
+                  label="Notas (Opcional)"
+                  placeholder="Ej. Control quincenal"
+                  :disabled="isSubmittingPeso"
+                />
+              </div>
+            </div>
+
+            <div class="flex items-center justify-end pt-1">
+              <button
+                type="submit"
+                class="px-6 py-2.5 btn-principal text-xs flex items-center gap-1.5 shadow-xs cursor-pointer font-semibold"
+                :disabled="isSubmittingPeso"
+              >
+                <Plus class="w-4 h-4" />
+                <span>Registrar Pesaje</span>
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Historial de Pesajes -->
+        <div class="border border-borde rounded-2xl overflow-hidden bg-white shadow-2xs">
+          <div v-if="avesStore.loadingPesos" class="py-8 text-center text-xs text-salvia flex items-center justify-center gap-2">
+            <Loader2 class="w-4 h-4 animate-spin" />
+            Cargando historial de peso...
+          </div>
+          <div v-else-if="avesStore.pesos.length === 0" class="py-10 text-center text-xs text-verdoso-muted">
+            <Scale class="w-8 h-8 text-salvia/40 mx-auto mb-2" />
+            No hay registros de pesaje para esta ave.
+          </div>
+          <table v-else class="w-full text-left text-xs">
+            <thead class="bg-crema/60 text-salvia font-bold uppercase tracking-wider text-[11px] border-b border-borde">
+              <tr>
+                <th class="px-5 py-3">Fecha</th>
+                <th class="px-5 py-3">Peso</th>
+                <th class="px-5 py-3">Observaciones</th>
+                <th class="px-5 py-3">Registrado Por</th>
+                <th class="px-5 py-3 text-right">Acción</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-borde text-verdoso">
+              <tr v-for="p in avesStore.pesos" :key="p.id" class="hover:bg-salvia-50/30 transition-colors">
+                <td class="px-5 py-3 whitespace-nowrap">{{ formatDate(p.fecha) }}</td>
+                <td class="px-5 py-3 whitespace-nowrap text-bosque">{{ p.peso_kg }} kg</td>
+                <td class="px-5 py-3">{{ p.observaciones || '—' }}</td>
+                <td class="px-5 py-3 text-salvia">{{ p.usuario?.name || 'Sistema' }}</td>
+                <td class="px-5 py-3 text-right">
+                  <button
+                    type="button"
+                    @click="handleDeletePeso(p.id)"
+                    class="p-1.5 text-salvia hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                    title="Eliminar pesaje"
+                  >
+                    <Trash2 class="w-4 h-4" />
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- PESTAÑA 3: BITÁCORA SANITARIA -->
+      <div v-else-if="detalleTab === 'bitacora'" class="space-y-5">
+        <!-- Formulario para agregar observación (Panel blanco limpio sin parches) -->
+        <div class="p-5 bg-white border border-borde rounded-2xl shadow-2xs space-y-4">
+          <div class="border-b border-borde pb-2.5 flex items-center justify-between">
+            <div>
+              <h4 class="text-sm font-bold text-verdoso">Registrar Evento Sanitario o de Conducta</h4>
+              <p class="text-xs text-verdoso-muted mt-0.5">Bitácora de salud, vacunas, tratamientos o incidencias zootécnicas.</p>
+            </div>
+          </div>
+
+          <form @submit.prevent="handleSubmitObs" class="space-y-4">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <FloatingInput
+                  v-model="obsForm.fecha"
+                  type="date"
+                  label="Fecha del Evento *"
+                  :disabled="isSubmittingObs"
+                />
+              </div>
+              <div>
+                <FloatingSelect
+                  v-model="obsForm.tipo"
+                  label="Tipo de Evento *"
+                  :options="tipoObsOptions"
+                  :disabled="isSubmittingObs"
+                />
+              </div>
+              <div>
+                <FloatingInput
+                  v-model="obsForm.titulo"
+                  label="Título / Motivo *"
+                  placeholder="Ej. Revisión ocular / Vacuna"
+                  :error="obsErrors.titulo"
+                  :disabled="isSubmittingObs"
+                />
+              </div>
+            </div>
+
+            <FloatingInput
+              v-model="obsForm.descripcion"
+              type="textarea"
+              label="Descripción del Evento *"
+              placeholder="Detalle de los síntomas observados o procedimiento aplicado..."
+              :rows="2"
+              :error="obsErrors.descripcion"
+              :disabled="isSubmittingObs"
+            />
+
+            <div class="grid grid-cols-1 sm:grid-cols-12 gap-4 items-end">
+              <div class="sm:col-span-8">
+                <FloatingInput
+                  v-model="obsForm.accion_tomada"
+                  label="Acción Tomada (Opcional)"
+                  placeholder="Ej. Aislamiento temporal / Administración de vitaminas..."
+                  :disabled="isSubmittingObs"
+                />
+              </div>
+              <div class="sm:col-span-4 flex justify-end">
+                <button
+                  type="submit"
+                  class="w-full sm:w-auto px-6 py-2.5 btn-principal text-xs flex items-center justify-center gap-1.5 shadow-xs cursor-pointer font-semibold"
+                  :disabled="isSubmittingObs"
+                >
+                  <Plus class="w-4 h-4" />
+                  <span>Registrar Evento</span>
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <!-- Timeline / Lista de Eventos -->
+        <div class="border border-borde rounded-2xl overflow-hidden p-4 bg-crema/20 space-y-3">
+          <div v-if="avesStore.loadingObservaciones" class="py-8 text-center text-xs text-salvia flex items-center justify-center gap-2">
+            <Loader2 class="w-4 h-4 animate-spin" />
+            Cargando bitácora sanitaria...
+          </div>
+          <div v-else-if="avesStore.observaciones.length === 0" class="py-10 text-center text-xs text-verdoso-muted">
+            <ClipboardList class="w-8 h-8 text-salvia/40 mx-auto mb-2" />
+            No hay eventos sanitarios u observaciones registradas para esta ave.
+          </div>
+          <div v-else class="space-y-3">
+            <div
+              v-for="obs in avesStore.observaciones"
+              :key="obs.id"
+              class="p-4 bg-white border border-borde rounded-xl shadow-2xs hover:border-salvia/60 transition-all"
+            >
+              <div class="flex items-center justify-between text-xs mb-2">
+                <div class="flex items-center gap-2">
+                  <span
+                    :class="[
+                      'px-2.5 py-0.5 rounded-full text-[10px] font-semibold border',
+                      obs.tipo === 'Salud' ? 'bg-red-50 text-red-700 border-red-200' :
+                      obs.tipo === 'Vacunación' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' :
+                      obs.tipo === 'Comportamiento' ? 'bg-blue-50 text-blue-800 border-blue-200' :
+                      obs.tipo === 'Nutrición' ? 'bg-amber-50 text-amber-800 border-amber-200' :
+                      obs.tipo === 'Incidencia' ? 'bg-orange-50 text-orange-800 border-orange-200' :
+                      'bg-salvia/15 text-bosque border-salvia/20'
+                    ]"
+                  >
+                    {{ obs.tipo }}
+                  </span>
+                  <span class="text-salvia text-[11px] font-mono">{{ formatDate(obs.fecha) }}</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-[11px] text-verdoso-muted font-normal">{{ obs.usuario?.name || 'Sistema' }}</span>
+                  <button
+                    type="button"
+                    @click="handleDeleteObs(obs.id)"
+                    class="p-1.5 text-salvia hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                    title="Eliminar evento"
+                  >
+                    <Trash2 class="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+              <h5 class="text-sm font-semibold text-verdoso">{{ obs.titulo }}</h5>
+              <p class="text-xs text-verdoso-muted mt-1 leading-relaxed">{{ obs.descripcion }}</p>
+              <div v-if="obs.accion_tomada" class="mt-3 p-2.5 bg-salvia-50/70 border border-salvia/20 rounded-xl text-xs text-verdoso flex items-start gap-1.5">
+                <span class="font-bold text-bosque whitespace-nowrap">Acción tomada:</span>
+                <span>{{ obs.accion_tomada }}</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 

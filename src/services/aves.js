@@ -60,3 +60,34 @@ export const getMovimientosAve = async (id) => {
   return response.data.data
 }
 
+// Seguimiento individual: Pesos
+export const getPesosAve = async (idAve) => {
+  const response = await api.get(`/aves/${idAve}/pesos`)
+  return response.data.data
+}
+
+export const addPesoAve = async (idAve, payload) => {
+  const response = await api.post(`/aves/${idAve}/pesos`, payload)
+  return response.data
+}
+
+export const deletePesoAve = async (idPeso) => {
+  const response = await api.delete(`/pesos/${idPeso}`)
+  return response.data
+}
+
+// Seguimiento individual: Observaciones y Bitácora Sanitaria
+export const getObservacionesAve = async (idAve) => {
+  const response = await api.get(`/aves/${idAve}/observaciones`)
+  return response.data.data
+}
+
+export const addObservacionAve = async (idAve, payload) => {
+  const response = await api.post(`/aves/${idAve}/observaciones`, payload)
+  return response.data
+}
+
+export const deleteObservacionAve = async (idObs) => {
+  const response = await api.delete(`/observaciones/${idObs}`)
+  return response.data
+}
