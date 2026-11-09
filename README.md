@@ -214,6 +214,14 @@ const eliminar = useConfirmAction({
 ### 6.6 Inicio de Sesión (`LoginView.vue`)
 * Formulario protegido con `FormField` y gestión de errores contra el endpoint `POST /auth/login`.
 
+### 6.7 Asistente Virtual Inteligente (`AsistenteChatWidget.vue`)
+* Widget flotante global montado en `App.vue` para usuarios autenticados.
+* Consume `POST /asistente/chat` con historial en memoria administrado por `useAsistenteStore`.
+* Componentes especializados en `components/asistente/`:
+  * `AsistenteChatWidget.vue`: Botón circular con icono institucional y ventana emergente de chat.
+  * `AsistenteMensaje.vue`: Renderizado accesible de mensajes de usuario y modelo con soporte de markdown ligero y badges de herramientas consultadas.
+  * `AsistenteIndicador.vue`: Indicador animado de estado de pensamiento y consulta.
+
 ---
 
 ## 7. Sistema de diseño y reglas de interfaz
