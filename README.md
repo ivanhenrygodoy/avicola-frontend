@@ -214,13 +214,15 @@ const eliminar = useConfirmAction({
 ### 6.6 Inicio de Sesión (`LoginView.vue`)
 * Formulario protegido con `FormField` y gestión de errores contra el endpoint `POST /auth/login`.
 
-### 6.7 Asistente Virtual Inteligente (`AsistenteChatWidget.vue`)
-* Widget flotante global montado en `App.vue` para usuarios autenticados.
-* Consume `POST /asistente/chat` con historial en memoria administrado por `useAsistenteStore`.
+### 6.7 Asistente Virtual AviaCore (`AsistenteChatWidget.vue`)
+* Widget conversacional flotante global montado en `App.vue` para usuarios autenticados.
+* Identidad corporativa **AviaCore** con imagotipo oficial [`GallinaIcon.vue`](src/components/common/GallinaIcon.vue) en el botón flotante, cabecera modal, estado inicial y avatar de respuestas.
+* Consume `POST /asistente/chat` con historial reactivo administrado por el store `useAsistenteStore` (`stores/asistente.js`).
 * Componentes especializados en `components/asistente/`:
-  * `AsistenteChatWidget.vue`: Botón circular con icono institucional y ventana emergente de chat.
-  * `AsistenteMensaje.vue`: Renderizado accesible de mensajes de usuario y modelo con soporte de markdown ligero y badges de herramientas consultadas.
-  * `AsistenteIndicador.vue`: Indicador animado de estado de pensamiento y consulta.
+  * `AsistenteChatWidget.vue`: Botón circular con pulso activo, ventana emergente accesible, atajos de teclado (Enter para enviar) y sugerencias rápidas operativas y zootécnicas.
+  * `AsistenteMensaje.vue`: Renderizado de markdown ligero (negritas, viñetas, saltos), avatar institucional y badges transparentes de auditoría de herramientas (`consultar_inventario_aves`, `consultar_produccion_huevos`, `consultar_gastos_periodo`, `consultar_ubicacion_ave`, `consultar_raciones_alimento` y **`Manuales técnicos zootécnicos`** para consultas RAG sobre patos, pavos y gallinas).
+  * `AsistenteIndicador.vue`: Indicador animado de estado de pensamiento y ejecución de herramientas en color salvia corporativo.
+* Documentación técnica y de diseño: [`DESIGN.md`](DESIGN.md) y arquitectura detallada en `docs/aviacore-arquitectura-harness.md` y `docs/aviacore-rag-embeddings.md`.
 
 ---
 
