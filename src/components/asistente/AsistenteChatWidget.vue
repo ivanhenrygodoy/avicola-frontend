@@ -19,6 +19,7 @@ const contenedorMensajes = ref(null)
 
 const sugerencias = [
   '¿Cuántas aves activas hay en total?',
+  '¿Qué cuidados y alimentación requiere el pato pichiche?',
   '¿Cuántos huevos se recolectaron en los últimos 7 días?',
   '¿Dónde está ubicada el ave AVE-001?',
   '¿Cuánto hemos gastado este mes?',

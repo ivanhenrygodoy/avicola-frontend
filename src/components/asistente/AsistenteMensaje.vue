@@ -20,6 +20,7 @@ const nombresHerramientas = {
   consultar_gastos_periodo: 'Control de gastos',
   consultar_ubicacion_ave: 'Ubicación de ave',
   consultar_raciones_alimento: 'Raciones de alimento',
+  consultar_manuales_tecnicos: 'Manuales técnicos zootécnicos',
 }
 
 const formatearTexto = (texto) => {
