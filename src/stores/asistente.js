@@ -77,6 +77,7 @@ export const useAsistenteStore = defineStore('asistente', {
             minute: '2-digit',
           }),
           herramientas: data.herramientas_utilizadas || [],
+          sugerenciasModulos: data.sugerencias_modulos || [],
         }
 
         this.mensajes.push(modelMsg)

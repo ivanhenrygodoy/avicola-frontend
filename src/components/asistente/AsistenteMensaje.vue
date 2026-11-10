@@ -1,7 +1,10 @@
 <script setup>
 import { computed } from 'vue'
-import { Database, AlertTriangle, User } from 'lucide-vue-next'
+import { useRouter } from 'vue-router'
+import { Database, AlertTriangle, User, CornerDownLeft } from 'lucide-vue-next'
 import GallinaIcon from '@/components/common/GallinaIcon.vue'
+
+const router = useRouter()
 
 const props = defineProps({
   mensaje: {
@@ -12,6 +15,12 @@ const props = defineProps({
 
 const esUsuario = computed(() => props.mensaje.role === 'user')
 const esError = computed(() => Boolean(props.mensaje.esError))
+
+const navegarAModulo = (ruta) => {
+  if (ruta && router) {
+    router.push(ruta)
+  }
+}
 
 // Mapa legible de nombres de herramientas
 const nombresHerramientas = {
@@ -33,6 +42,8 @@ const formatearTexto = (texto) => {
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
     // Viñetas simples * item
     .replace(/(?:^|<br\/>)\*\s+(.*?)(?=(?:<br\/>|$))/g, '<div class="flex items-start gap-1.5 my-0.5"><span class="text-salvia shrink-0">•</span><span>$1</span></div>')
+    // Enlaces markdown [texto](url)
+    .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" class="text-bosque underline font-medium hover:text-salvia">$1</a>')
 }
 </script>
 
@@ -88,6 +99,24 @@ const formatearTexto = (texto) => {
           </span>
         </div>
       </div>
+    </div>
+
+    <!-- Píldoras de Enlace a Módulos del Sistema (Estilo Capture 2) -->
+    <div
+      v-if="!esUsuario && mensaje.sugerenciasModulos && mensaje.sugerenciasModulos.length > 0"
+      class="flex flex-col gap-1.5 w-full pl-8 pr-2 my-1"
+    >
+      <button
+        v-for="sug in mensaje.sugerenciasModulos"
+        :key="sug.ruta"
+        type="button"
+        @click="navegarAModulo(sug.ruta)"
+        class="inline-flex items-center gap-2 px-3.5 py-1.5 bg-white border border-borde rounded-full text-xs font-medium text-verdoso hover:text-bosque hover:border-salvia hover:bg-salvia-50 shadow-2xs transition-all duration-150 text-left cursor-pointer group w-fit max-w-full"
+        :title="sug.descripcion || sug.titulo"
+      >
+        <CornerDownLeft class="w-3.5 h-3.5 text-salvia group-hover:text-bosque shrink-0 transition-colors" />
+        <span class="truncate">{{ sug.titulo }}</span>
+      </button>
     </div>
 
     <!-- Timestamp -->
