@@ -9,6 +9,7 @@ import {
   Layers,
   Egg,
   DollarSign,
+  Activity,
   User,
   LogOut,
   Menu,
@@ -66,6 +67,12 @@ const navItems = [
     name: 'Gastos',
     to: '/gastos',
     icon: DollarSign,
+    exact: false,
+  },
+  {
+    name: 'Benchmark',
+    to: '/benchmark',
+    icon: Activity,
     exact: false,
   },
 ]

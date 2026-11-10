@@ -1,12 +1,24 @@
 import { defineStore } from 'pinia'
 import * as asistenteService from '@/services/asistente'
 
+// Identificador anónimo de la conversación (no deriva del usuario) para agrupar los turnos en el
+// Benchmark. crypto.randomUUID solo existe en contextos seguros (https/localhost): si falta, se
+// devuelve null y el backend simplemente no agrupa; el chat nunca debe fallar por esto.
+const nuevoUuidConversacion = () => {
+  try {
+    return globalThis.crypto?.randomUUID?.() ?? null
+  } catch {
+    return null
+  }
+}
+
 export const useAsistenteStore = defineStore('asistente', {
   state: () => ({
     isOpen: false,
     cargando: false,
     error: null,
     mensajes: [],
+    uuidConversacion: nuevoUuidConversacion(),
   }),
 
   getters: {
@@ -30,6 +42,7 @@ export const useAsistenteStore = defineStore('asistente', {
     limpiarHistorial() {
       this.mensajes = []
       this.error = null
+      this.uuidConversacion = nuevoUuidConversacion()
     },
 
     async enviarMensaje(texto) {
@@ -63,10 +76,13 @@ export const useAsistenteStore = defineStore('asistente', {
       this.error = null
 
       try {
-        const data = await asistenteService.enviarMensaje({
+        const payload = {
           mensaje: textoLimpio,
           historial: historialApi,
-        })
+        }
+        if (this.uuidConversacion) payload.uuid_conversacion = this.uuidConversacion
+
+        const data = await asistenteService.enviarMensaje(payload)
 
         const modelMsg = {
           id: `model-${Date.now()}`,
