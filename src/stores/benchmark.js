@@ -20,6 +20,7 @@ const statsVacias = () => ({ total: 0, exitosos: 0, bloqueados: 0, errores: 0 })
 let ultimaEstadisticas = 0
 let ultimosLogs = 0
 let ultimoDetalle = 0
+let ultimaVistaPrevia = 0
 
 export const useBenchmarkStore = defineStore('benchmark', {
   state: () => ({
@@ -38,6 +39,9 @@ export const useBenchmarkStore = defineStore('benchmark', {
     // Modal de detalle
     detalle: null,
     loadingDetalle: false,
+    // Modal de depuración de histórico
+    vistaPreviaDepuracion: null,
+    loadingVistaPrevia: false,
   }),
 
   actions: {
@@ -128,6 +132,38 @@ export const useBenchmarkStore = defineStore('benchmark', {
       ultimoDetalle++ // invalida cualquier petición de detalle en vuelo
       this.detalle = null
       this.loadingDetalle = false
+    },
+
+    async fetchVistaPreviaDepuracion(meses) {
+      const turno = ++ultimaVistaPrevia
+      this.loadingVistaPrevia = true
+      this.vistaPreviaDepuracion = null
+      try {
+        const datos = await benchmarkService.getVistaPreviaDepuracion(meses)
+        if (turno !== ultimaVistaPrevia) return null
+        this.vistaPreviaDepuracion = datos
+        return datos
+      } catch (err) {
+        if (turno !== ultimaVistaPrevia) return null
+        console.error('Error cargando vista previa de depuración:', err)
+        this.vistaPreviaDepuracion = null
+        throw err
+      } finally {
+        if (turno === ultimaVistaPrevia) this.loadingVistaPrevia = false
+      }
+    },
+
+    limpiarVistaPreviaDepuracion() {
+      ultimaVistaPrevia++ // invalida cualquier petición de vista previa en vuelo
+      this.vistaPreviaDepuracion = null
+      this.loadingVistaPrevia = false
+    },
+
+    async depurarLogs(meses) {
+      const respuesta = await benchmarkService.depurarLogs(meses)
+      this.filters.page = 1
+      await Promise.all([this.fetchLogs(), this.fetchEstadisticas()])
+      return respuesta
     },
   },
 })

@@ -244,7 +244,8 @@ Auditoría de las interacciones entre los operarios y el asistente, organizada c
   * `SerieDiariaCard.vue`: tarjeta con gráfico de líneas por día (se usa dos veces).
   * `RankingCard.vue`: tarjeta con lista de barras, opcionalmente clicable y con porcentaje (se usa tres veces).
   * `LogDetalleModal.vue`: auditoría de un turno sobre `BaseModal`: mensaje del operario, prompt del sistema (`CollapsibleCard`, avisa si el prompt cambió desde esa interacción), respuesta del agente (y la original del modelo si un guard la reemplazó), herramientas con las tablas consultadas, guardrails aplicados, tokens y error. **Todo el texto se muestra con interpolación `{{ }}`, nunca como HTML**, porque proviene del operario o del modelo.
-* `utils/benchmark.js` es la fuente única de etiquetas y variantes de `StatusBadge` para resultado, acción y fase de los guards.
+* `LimpiezaHistoricoModal.vue`: depuración manual del histórico antiguo del asistente sobre `BaseModal` con `RangeToggle` en píldoras (tamaño `md` con 3, 6 y 12 meses): banner con tokens `destructivo`/`destructivo-bg`, vista previa de registros a eliminar antes de confirmar (`aria-live="polite"`), botón bloqueado si hay 0 registros o carga en curso, y confirmación destructiva con `useActionLoader` y `notify`.
+* `utils/benchmark.js` es la fuente única de etiquetas y variantes de `StatusBadge` para resultado, acción y fase de los guards, y opciones de meses para la depuración (`MESES_DEPURACION = [3, 6, 12]`).
 * **Store (`stores/benchmark.js`):** solo la última petición de cada recurso (estadísticas, logs, detalle) puede escribir en el estado, así una respuesta lenta no pisa a una posterior al cambiar de rango, filtrar rápido o abrir otro log. Los errores de carga se muestran con `BaseAlert`. Al volver a una pestaña se recargan sus datos, porque las interacciones llegan mientras la vista está abierta.
 
 ---

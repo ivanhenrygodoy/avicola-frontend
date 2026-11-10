@@ -13,13 +13,21 @@ defineProps({
   unitLabel: { type: String, default: 'días' },
   ariaLabel: { type: String, default: 'Rango de días' },
   loading: { type: Boolean, default: false },
+  size: { type: String, default: 'sm', validator: (v) => ['sm', 'md'].includes(v) },
 })
 
 defineEmits(['update:modelValue'])
 </script>
 
 <template>
-  <div class="inline-flex rounded-full border border-borde p-0.5 bg-crema" role="group" :aria-label="ariaLabel">
+  <div
+    :class="[
+      'inline-flex rounded-full border border-borde bg-crema',
+      size === 'md' ? 'p-1' : 'p-0.5',
+    ]"
+    role="group"
+    :aria-label="ariaLabel"
+  >
     <button
       v-for="opcion in options"
       :key="opcion"
@@ -27,7 +35,8 @@ defineEmits(['update:modelValue'])
       :disabled="loading"
       :aria-pressed="modelValue === opcion"
       :class="[
-        'px-3 py-1 rounded-full text-xs font-semibold transition-colors cursor-pointer disabled:cursor-wait',
+        'rounded-full font-semibold transition-colors cursor-pointer disabled:cursor-wait',
+        size === 'md' ? 'px-4 py-2 text-sm' : 'px-3 py-1 text-xs',
         modelValue === opcion ? 'bg-bosque text-white' : 'text-verdoso-muted hover:text-bosque',
       ]"
       @click="$emit('update:modelValue', opcion)"

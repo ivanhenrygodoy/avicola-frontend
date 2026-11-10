@@ -14,18 +14,23 @@ import FilterBar from '@/components/common/FilterBar.vue'
 import DataTable from '@/components/common/DataTable.vue'
 import StatusBadge from '@/components/common/StatusBadge.vue'
 import RowActionButton from '@/components/common/RowActionButton.vue'
+import ActionLoader from '@/components/common/ActionLoader.vue'
 import SerieDiariaCard from '@/components/benchmark/SerieDiariaCard.vue'
 import RankingCard from '@/components/benchmark/RankingCard.vue'
 import LogDetalleModal from '@/components/benchmark/LogDetalleModal.vue'
+import LimpiezaHistoricoModal from '@/components/benchmark/LimpiezaHistoricoModal.vue'
+import { provideActionLoader } from '@/composables/useActionLoader'
 import { resultadoInfo, RESULTADO_OPTIONS, etiquetaDia, formatNumber } from '@/utils/benchmark'
 
-import { BarChart3, ScrollText, Eye } from 'lucide-vue-next'
+import { BarChart3, ScrollText, Eye, Eraser } from 'lucide-vue-next'
 
 const store = useBenchmarkStore()
 const notify = useNotificationStore()
+const { isSubmitting, message: loaderMessage } = provideActionLoader()
 
 const activeTab = ref('estadisticas')
 const showDetalle = ref(false)
+const showLimpiezaModal = ref(false)
 
 const tabs = [
   { value: 'estadisticas', label: 'Estadísticas', icon: BarChart3 },
@@ -262,8 +267,11 @@ onMounted(() => {
           v-model="store.filters"
           :fields="filterFields"
           :loading="store.loadingLogs"
+          action-label="Limpiar historial"
+          :action-icon="Eraser"
           @search="handleSearch"
           @clear="handleClear"
+          @action="showLimpiezaModal = true"
         />
 
         <DataTable
@@ -306,5 +314,7 @@ onMounted(() => {
     </main>
 
     <LogDetalleModal :is-open="showDetalle" :detalle="store.detalle" :loading="store.loadingDetalle" @close="cerrarDetalle" />
+    <LimpiezaHistoricoModal :is-open="showLimpiezaModal" @close="showLimpiezaModal = false" />
+    <ActionLoader :is-open="isSubmitting" :message="loaderMessage" />
   </div>
 </template>

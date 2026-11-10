@@ -44,3 +44,8 @@ export const etiquetaDia = (fecha) => {
 
 // Enteros con separador de miles (es-ES)
 export const formatNumber = (n) => Number(n || 0).toLocaleString('es-ES')
+
+// Opciones del selector de depuración manual del histórico
+export const MESES_DEPURACION = [3, 6, 12]
+export const MESES_DEPURACION_DEFECTO = 12
+
