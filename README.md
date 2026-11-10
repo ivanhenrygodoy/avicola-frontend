@@ -1,6 +1,6 @@
 # Avícola · Frontend
 
-SPA de la **Granja Avícola Inteligente**: panel de control, instalaciones, inventario de aves, producción y alimentación, y control de gastos operativos. Está construida con **Vue 3 (Composition API)**, **Vite**, **Pinia**, **Vue Router** y **Tailwind CSS 3**, y consume la API REST del repositorio `avicola-backend-api`.
+SPA de la **Granja Avícola Inteligente**: panel de control, instalaciones, inventario de aves, producción y alimentación, control de gastos operativos, el asistente virtual AviaCore y el módulo Benchmark AviaCore (auditoría del asistente). Está construida con **Vue 3 (Composition API)**, **Vite**, **Pinia**, **Vue Router** y **Tailwind CSS 3**, y consume la API REST del repositorio `avicola-backend-api`.
 
 > Este documento describe el estado actual del código para guiar futuros desarrollos. La hoja de ruta por etapas del proyecto completo vive en el `README.md` de la carpeta raíz (`Proyects-IA/`); aquí se documenta únicamente el frontend. Las reglas visuales completas están en [`DESIGN.md`](DESIGN.md).
 
@@ -54,13 +54,16 @@ src/
 │   ├── aves/          # AvesStats y modales del inventario avícola
 │   ├── instalaciones/ # InstalacionesStats y modales de casitas/corrales
 │   ├── produccion/    # Modales de registro de huevos y raciones
-│   └── gastos/        # Modales de registro de gastos operativos
+│   ├── gastos/        # Modales de registro de gastos operativos
+│   ├── asistente/     # Widget conversacional AviaCore
+│   └── benchmark/     # Tarjetas de estadísticas y modal de detalle del Benchmark
 ├── composables/       # Lógica desacoplada reutilizable (useActionLoader, useConfirmAction, useFormErrors)
 ├── views/             # Vistas por ruta: orquestan componentes y stores (ligeras, ~150-400 líneas)
 ├── stores/            # Pinia: estado, filtros y mutaciones por módulo
 ├── services/          # Clientes HTTP (Axios), uno por módulo
 ├── router/            # Rutas y guardas de navegación
 ├── utils/format.js    # formatMoney, formatMoneyOrDash, formatDate, toInputDate
+├── utils/benchmark.js # Etiquetas y variantes de badge del Benchmark (resultado, acción, fase)
 └── style.css          # Tokens, botones corporativos y clases de animación
 ```
 
@@ -79,7 +82,7 @@ Flujo de datos: **vista → store (Pinia) → servicio (Axios) → API.** Las vi
 
 ## 3. Autenticación, rutas y capa HTTP
 
-**Rutas** (`router/index.js`): `/login` (solo invitados), `/` (dashboard), `/instalaciones`, `/aves`, `/produccion` y `/gastos`. Todas menos `/login` exigen sesión; cualquier otra ruta redirige a `/`. La guarda `beforeEach` redirige a `login` si no hay token y al dashboard si un usuario autenticado entra a `/login`.
+**Rutas** (`router/index.js`): `/login` (solo invitados), `/` (dashboard), `/instalaciones`, `/aves`, `/produccion`, `/gastos` y `/benchmark`. Todas menos `/login` exigen sesión; cualquier otra ruta redirige a `/`. La guarda `beforeEach` redirige a `login` si no hay token y al dashboard si un usuario autenticado entra a `/login`.
 
 **Sesión** (`stores/auth.js`): el token Bearer y el usuario se guardan en `localStorage` (`avicola_token`, `avicola_user`). `logout` borra la sesión local aunque el backend falle.
 
@@ -104,6 +107,10 @@ Todos viven en `src/components/common/`. **Antes de escribir marcado nuevo, cons
 | `SectionCard` | Tarjeta con título, subtítulo y slot `#actions` | `title`, `subtitle` | — |
 | `CollapsibleCard` | Tarjeta con cabecera desplegable accesible (`aria-expanded`/`aria-controls`) | `title`, `subtitle`, `icon`, `defaultOpen` | `open`, `close` |
 | `StatCard` | Tarjeta KPI para indicadores clave | `title`, `value`, `valueColorClass` | — |
+| `PillTabs` | Interruptor de pestañas tipo píldora (el de "Recolección de Huevos / Raciones de Alimento"), con `role="tablist"` | `modelValue` (`v-model`), `tabs` (`[{ value, label, icon }]`), `ariaLabel` | `update:modelValue` |
+| `RangeToggle` | Selector compacto de rango (7 / 30 días) con píldoras pequeñas | `modelValue` (`v-model`), `options`, `unitLabel`, `loading`, `ariaLabel` | `update:modelValue` |
+
+> `PillTabs` y `RangeToggle` nacieron con el módulo Benchmark a partir de marcado que hoy sigue copiado en `ProduccionView` (interruptor de pestañas) y `ProduccionHuevosCard` (píldoras 7/30). Su migración está pendiente, ver [deuda técnica](#12-estado-de-deuda-técnica).
 
 ### Tablas y Listados
 
@@ -222,7 +229,23 @@ const eliminar = useConfirmAction({
   * `AsistenteChatWidget.vue`: Botón circular con pulso activo, ventana emergente accesible, atajos de teclado (Enter para enviar) y sugerencias rápidas operativas y zootécnicas.
   * `AsistenteMensaje.vue`: Renderizado de markdown ligero (negritas, viñetas, saltos), avatar institucional y badges transparentes de auditoría de herramientas (`consultar_inventario_aves`, `consultar_produccion_huevos`, `consultar_gastos_periodo`, `consultar_ubicacion_ave`, `consultar_raciones_alimento` y **`Manuales técnicos zootécnicos`** para consultas RAG sobre patos, pavos y gallinas).
   * `AsistenteIndicador.vue`: Indicador animado de estado de pensamiento y ejecución de herramientas en color salvia corporativo.
+* El store genera un `uuidConversacion` anónimo (`crypto.randomUUID`, no deriva del usuario) al crearse y al limpiar la conversación, y lo envía en cada mensaje como `uuid_conversacion` para que el Benchmark agrupe los turnos de una misma conversación. Si el navegador no lo soporta (contextos no seguros), simplemente no se envía y el chat sigue funcionando.
 * Documentación técnica y de diseño: [`DESIGN.md`](DESIGN.md) y arquitectura detallada en `docs/aviacore-arquitectura-harness.md` y `docs/aviacore-rag-embeddings.md`.
+
+### 6.8 Benchmark AviaCore (`BenchmarkView.vue`)
+Auditoría de las interacciones entre los operarios y el asistente, organizada como Producción: un `PageHeader` con `PillTabs` que alterna entre dos secciones. Consume `GET /asistente/benchmark/*` (solo lectura) mediante `services/benchmark.js` y el store `useBenchmarkStore`. El acceso es para cualquier usuario autenticado y **no muestra quién escribió cada mensaje** (la bitácora no lo guarda).
+
+* **Estadísticas:** selector de 7 o 30 días (`RangeToggle`) que gobierna toda la sección.
+  * 4 `StatCard`: interacciones, tasa de éxito, tokens consumidos (con promedio por turno) y latencia promedio.
+  * 2 gráficos por día con `SerieDiariaCard` (`SectionCard` + `LineChart`): interacciones (exitosas, bloqueadas por guard, con error) y tokens (prompt y respuesta).
+  * 3 rankings con `RankingCard` (`ProgressBar`): resultado de las interacciones (con %), guards más activados y herramientas más usadas. Los dos últimos son clicables: abren la pestaña de logs ya filtrada por ese guard o herramienta.
+* **Logs del agente:** 4 `StatCard` del filtro vigente, `FilterBar` (texto, resultado, guard, herramienta, desde y hasta) y `DataTable` con `PaginationBar` integrada (fecha, mensaje, resultado como `StatusBadge`, tokens, duración, guards y acción *Ver detalle*).
+* Componentes en `components/benchmark/`:
+  * `SerieDiariaCard.vue`: tarjeta con gráfico de líneas por día (se usa dos veces).
+  * `RankingCard.vue`: tarjeta con lista de barras, opcionalmente clicable y con porcentaje (se usa tres veces).
+  * `LogDetalleModal.vue`: auditoría de un turno sobre `BaseModal`: mensaje del operario, prompt del sistema (`CollapsibleCard`, avisa si el prompt cambió desde esa interacción), respuesta del agente (y la original del modelo si un guard la reemplazó), herramientas con las tablas consultadas, guardrails aplicados, tokens y error. **Todo el texto se muestra con interpolación `{{ }}`, nunca como HTML**, porque proviene del operario o del modelo.
+* `utils/benchmark.js` es la fuente única de etiquetas y variantes de `StatusBadge` para resultado, acción y fase de los guards.
+* **Store (`stores/benchmark.js`):** solo la última petición de cada recurso (estadísticas, logs, detalle) puede escribir en el estado, así una respuesta lenta no pisa a una posterior al cambiar de rango, filtrar rápido o abrir otro log. Los errores de carga se muestran con `BaseAlert`. Al volver a una pestaña se recargan sus datos, porque las interacciones llegan mientras la vista está abierta.
 
 ---
 
@@ -287,6 +310,7 @@ La fuente de verdad estética es [`DESIGN.md`](DESIGN.md) (modo **Operate**: int
 | Skill `avicola-frontend` | `.agents/skills/avicola-frontend/SKILL.md` | Reglas de arquitectura, componentes globales y validación visual con `FormField` |
 | Skill `impeccable` | Configuración global | Guía de excelencia y pulido de interfaces en modo *Operate* |
 | Skill `dataviz` | Entorno de desarrollo | Guía de contraste y selección de gráficos para el dashboard |
+| Diseño y plan del Benchmark | `Proyects-IA/docs/superpowers/specs/` y `plans/` | Diseño, plan de implementación del Benchmark y plan de depuración de logs |
 
 ---
 
@@ -316,7 +340,11 @@ La fuente de verdad estética es [`DESIGN.md`](DESIGN.md) (modo **Operate**: int
 * **Desborde en Encabezado:** Se ajustó el breakpoint responsivo de `AppHeader.vue` a `lg`, eliminando el desborde a 768px.
 * **Paginación Inteligente:** `PaginationBar.vue` ahora implementa recorte con ventana deslizante (`…`).
 * **Soporte de Sombras:** Se integraron `shadow-xs` y `shadow-2xs` en `tailwind.config.js`.
+* **Módulo Benchmark AviaCore:** Se agregó la vista `/benchmark` reutilizando `DataTable`, `FilterBar`, `StatCard`, `SectionCard`, `LineChart`, `ProgressBar`, `BaseModal`, `CollapsibleCard` y `BaseAlert`, más los componentes globales `PillTabs` y `RangeToggle`.
 
 ### Puntos Pendientes para Futuras Iteraciones ⏳
-* **Pruebas Automatizadas de Frontend:** Incorporar suite de pruebas de componentes (Vitest / Vue Test Utils).
+* **Pruebas Automatizadas de Frontend:** Incorporar suite de pruebas de componentes (Vitest / Vue Test Utils). El módulo Benchmark se verificó con `npm run build` y en navegador, pero no tiene pruebas automáticas (por ejemplo, de las condiciones de carrera del store).
+* **Migrar Producción a `PillTabs` y `RangeToggle`:** `ProduccionView.vue` (interruptor de pestañas) y `ProduccionHuevosCard.vue` (píldoras 7/30) todavía llevan ese marcado copiado. Los componentes globales ya existen y reproducen las mismas clases; falta reemplazarlo, con visto bueno porque son pantallas establecidas (DESIGN.md pide consultar antes de alterarlas).
+* **Accesibilidad de `PillTabs`:** usa `role="tablist"`/`role="tab"` pero sin `role="tabpanel"`, `aria-controls` ni navegación con flechas.
+* **Colores del modal de Benchmark:** `LogDetalleModal.vue` usa clases `amber-*` y `red-*` de Tailwind donde DESIGN.md define los tokens `huevo`/`huevo-suave` y `destructivo`/`destructivo-bg`.
 * **Parpadeo de Estado Vacío en Raciones:** Al alternar a la pestaña *Raciones de Alimento* en Producción, optimizar la inicialización del estado para evitar el flash del mensaje vacío previo a la carga.
