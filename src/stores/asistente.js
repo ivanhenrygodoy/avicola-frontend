@@ -84,7 +84,7 @@ export const useAsistenteStore = defineStore('asistente', {
         console.error('Error en el asistente virtual:', err)
         const mensajeError =
           err.response?.data?.message ||
-          'Lo siento, ocurrió un error al consultar el asistente. Intenta nuevamente.'
+          'AviaCore experimentó una demora de conexión al consultar el servicio de asistencia. Por favor, intenta formular tu consulta nuevamente en unos instantes.'
 
         this.error = mensajeError
 

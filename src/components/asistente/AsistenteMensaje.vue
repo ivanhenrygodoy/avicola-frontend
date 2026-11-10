@@ -49,9 +49,10 @@ const formatearTexto = (texto) => {
       <!-- Avatar pequeño -->
       <div
         class="w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5"
-        :class="esUsuario ? 'bg-salvia text-white' : 'bg-bosque text-white'"
+        :class="esUsuario ? 'bg-salvia text-white' : esError ? 'bg-amber-600 text-white' : 'bg-bosque text-white'"
       >
         <User v-if="esUsuario" class="w-3.5 h-3.5" />
+        <AlertTriangle v-else-if="esError" class="w-3.5 h-3.5 text-white" />
         <GallinaIcon v-else class="w-3.5 h-3.5 text-white" />
       </div>
 
