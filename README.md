@@ -106,11 +106,18 @@ Todos viven en `src/components/common/`. **Antes de escribir marcado nuevo, cons
 | `PageHeader` | Encabezado corporativo de vista (título Display, subtítulo y slot `#actions`) | `title`, `subtitle`, `align`, `bordered` | — |
 | `SectionCard` | Tarjeta con título, subtítulo y slot `#actions` | `title`, `subtitle` | — |
 | `CollapsibleCard` | Tarjeta con cabecera desplegable accesible (`aria-expanded`/`aria-controls`) | `title`, `subtitle`, `icon`, `defaultOpen` | `open`, `close` |
-| `StatCard` | Tarjeta KPI para indicadores clave | `title`, `value`, `valueColorClass` | — |
+| `StatCard` | Tarjeta KPI para indicadores clave | `title`, `value`, `valueColorClass`, `subtitle` (línea de contexto opcional bajo la cifra), `hint` (tooltip opcional, por ejemplo la cifra exacta cuando `value` va abreviado) | — |
 | `PillTabs` | Interruptor de pestañas tipo píldora (el de "Recolección de Huevos / Raciones de Alimento"), con `role="tablist"` | `modelValue` (`v-model`), `tabs` (`[{ value, label, icon }]`), `ariaLabel` | `update:modelValue` |
-| `RangeToggle` | Selector compacto de rango (7 / 30 días) con píldoras pequeñas | `modelValue` (`v-model`), `options`, `unitLabel`, `loading`, `ariaLabel` | `update:modelValue` |
+| `RangeToggle` | Selector compacto de rango (7 / 30 días) con píldoras pequeñas | `modelValue` (`v-model`), `options`, `unitLabel`, `loading`, `ariaLabel`, `size` (`sm` por defecto, `md` para acciones que piden más superficie táctil, como la depuración del histórico) | `update:modelValue` |
 
 > `PillTabs` y `RangeToggle` nacieron con el módulo Benchmark a partir de marcado que hoy sigue copiado en `ProduccionView` (interruptor de pestañas) y `ProduccionHuevosCard` (píldoras 7/30). Su migración está pendiente, ver [deuda técnica](#12-estado-de-deuda-técnica).
+
+### Gráficos e Indicadores
+
+| Componente | Para qué sirve | Props principales | Eventos |
+|---|---|---|---|
+| `LineChart` | Gráfico de líneas SVG multi-serie con una sola escala Y, crosshair y tooltip (también con teclado ← →), leyenda y tabla `sr-only` como equivalente accesible. Los márgenes laterales se ajustan al largo de las cifras del eje, así que los números grandes no se cortan | `labels`, `series` (`[{ name, color, values }]`), `ariaLabel`, `height`, `labelEvery`, `loading`, `formatValue` (abrevia el eje y la etiqueta final, p. ej. "60 mil"), `formatDetalle` (valor del tooltip, p. ej. la cifra exacta) | — |
+| `ProgressBar` | Barra de progreso accesible (`role="progressbar"`) que tolera `max = 0` sin mostrar `NaN` | `value`, `max`, `colorClass`, `label` | — |
 
 ### Tablas y Listados
 
@@ -236,8 +243,11 @@ const eliminar = useConfirmAction({
 Auditoría de las interacciones entre los operarios y el asistente, organizada como Producción: un `PageHeader` con `PillTabs` que alterna entre dos secciones. Consume `GET /asistente/benchmark/*` (solo lectura) mediante `services/benchmark.js` y el store `useBenchmarkStore`. El acceso es para cualquier usuario autenticado y **no muestra quién escribió cada mensaje** (la bitácora no lo guarda).
 
 * **Estadísticas:** selector de 7 o 30 días (`RangeToggle`) que gobierna toda la sección.
-  * 4 `StatCard`: interacciones, tasa de éxito, tokens consumidos (con promedio por turno) y latencia promedio.
-  * 2 gráficos por día con `SerieDiariaCard` (`SectionCard` + `LineChart`): interacciones (exitosas, bloqueadas por guard, con error) y tokens (prompt y respuesta).
+  * 8 `StatCard` en dos filas de cuatro. Un turno "con modelo" es el que no fue bloqueado por un guard ni resuelto por la vía rápida (los errores del proveedor cuentan: llegaron a Gemini). Cada tarjeta lleva una línea de contexto (`subtitle`):
+    * **Uso y consumo:** *Interacciones* (con y sin modelo), *Tokens consumidos* (abreviado, "66,4 mil", con entrada y salida por separado y la cifra exacta en el tooltip), *Tokens por consulta al modelo* (solo sobre los turnos con modelo) y *Llamadas al modelo por consulta*.
+    * **Calidad y rendimiento:** *Resueltas*, *Bloqueadas por guards* (no llegaron al modelo), *Errores del proveedor* (con la espera acumulada) y *Latencia típica* (mediana, con el percentil 90 como "el 10 % más lento").
+    * No hay métrica de costo: los precios del proveedor cambian y el sistema no los guarda. La antigua *Tasa de éxito* y los promedios generales se quitaron porque mezclaban turnos con y sin modelo (un bloqueo de guard contaba como fallo).
+  * 2 gráficos por día con `SerieDiariaCard` (`SectionCard` + `LineChart`): interacciones (exitosas, bloqueadas por guard, con error) y tokens, con **entrada y salida como dos líneas en un mismo gráfico**; el eje se abrevia ("20 mil") y el tooltip muestra la cifra exacta.
   * 3 rankings con `RankingCard` (`ProgressBar`): resultado de las interacciones (con %), guards más activados y herramientas más usadas. Los dos últimos son clicables: abren la pestaña de logs ya filtrada por ese guard o herramienta.
 * **Logs del agente:** 4 `StatCard` del filtro vigente, `FilterBar` (texto, resultado, guard, herramienta, desde y hasta) y `DataTable` con `PaginationBar` integrada (fecha, mensaje, resultado como `StatusBadge`, tokens, duración, guards y acción *Ver detalle*).
 * Componentes en `components/benchmark/`:
@@ -245,7 +255,7 @@ Auditoría de las interacciones entre los operarios y el asistente, organizada c
   * `RankingCard.vue`: tarjeta con lista de barras, opcionalmente clicable y con porcentaje (se usa tres veces).
   * `LogDetalleModal.vue`: auditoría de un turno sobre `BaseModal`: mensaje del operario, prompt del sistema (`CollapsibleCard`, avisa si el prompt cambió desde esa interacción), respuesta del agente (y la original del modelo si un guard la reemplazó), herramientas con las tablas consultadas, guardrails aplicados, tokens y error. **Todo el texto se muestra con interpolación `{{ }}`, nunca como HTML**, porque proviene del operario o del modelo.
 * `LimpiezaHistoricoModal.vue`: depuración manual del histórico antiguo del asistente sobre `BaseModal` con `RangeToggle` en píldoras (tamaño `md` con 3, 6 y 12 meses): banner con tokens `destructivo`/`destructivo-bg`, vista previa de registros a eliminar antes de confirmar (`aria-live="polite"`), botón bloqueado si hay 0 registros o carga en curso, y confirmación destructiva con `useActionLoader` y `notify`.
-* `utils/benchmark.js` es la fuente única de etiquetas y variantes de `StatusBadge` para resultado, acción y fase de los guards, y opciones de meses para la depuración (`MESES_DEPURACION = [3, 6, 12]`).
+* `utils/benchmark.js` es la fuente única de etiquetas y variantes de `StatusBadge` para resultado, acción y fase de los guards, de las opciones de meses para la depuración (`MESES_DEPURACION = [3, 6, 12]`) y de los formateadores de números: `formatNumber` (separador de miles desde 1.000, porque `es-ES` no agrupa los de cuatro cifras), `formatCompacto` ("66,4 mil", "1,2 M"), `formatEjeCompacto` (ejes de gráficos, sin decimal fijo), `formatDuracion` ("9,7 s", "1 min 48 s") y `formatPorcentaje`.
 * **Store (`stores/benchmark.js`):** solo la última petición de cada recurso (estadísticas, logs, detalle) puede escribir en el estado, así una respuesta lenta no pisa a una posterior al cambiar de rango, filtrar rápido o abrir otro log. Los errores de carga se muestran con `BaseAlert`. Al volver a una pestaña se recargan sus datos, porque las interacciones llegan mientras la vista está abierta.
 
 ---
