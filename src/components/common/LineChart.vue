@@ -10,6 +10,13 @@ import { computed, ref } from 'vue'
  * - Etiqueta de valor al final de cada línea solo si no choca con otra
  *   (si chocan, la leyenda y el tooltip llevan la identidad).
  * - Tabla sr-only como equivalente accesible.
+ * - Los márgenes izquierdo y derecho crecen según el largo de las etiquetas del eje Y y del valor
+ *   final, para que las cifras grandes no se corten (con cifras pequeñas quedan en 34 y 40).
+ *
+ * formatValue:   función opcional para abreviar los valores del eje Y y la etiqueta final
+ *                (por ejemplo 60000 → "60 mil"). Sin ella se muestra el número tal cual.
+ * formatDetalle: función opcional para el valor del tooltip (por ejemplo el número exacto con
+ *                separador de miles). Sin ella usa el mismo formato que formatValue.
  */
 const props = defineProps({
   labels: { type: Array, default: () => [] },
@@ -18,14 +25,42 @@ const props = defineProps({
   height: { type: Number, default: 220 },
   labelEvery: { type: Number, default: 1 }, // 1 etiqueta X de cada N
   loading: { type: Boolean, default: false },
+  formatValue: { type: Function, default: null },
+  formatDetalle: { type: Function, default: null },
 })
 
 const WIDTH = 640
-const PAD = { top: 12, right: 40, bottom: 26, left: 34 }
 const SURFACE = '#FFFFFF'
 const TICKS = 4
+const ANCHO_CARACTER = 6.4 // aproximación del ancho de un carácter a font-size 11
 
-const plotW = WIDTH - PAD.left - PAD.right
+const fmt = (v) => (props.formatValue ? props.formatValue(v) : v)
+const fmtDetalle = (v) => (props.formatDetalle ? props.formatDetalle(v) : fmt(v))
+
+// Márgenes laterales dinámicos. padRight se calcula desde los valores finales y no desde
+// `etiquetasFinales` para no crear una dependencia circular (esa lista usa x(), que usa plotW).
+const padLeft = computed(() => {
+  const largo = Math.max(0, ...ticks.value.map((t) => String(fmt(t.value)).length))
+  return Math.max(34, Math.ceil(largo * ANCHO_CARACTER + 12))
+})
+const padRight = computed(() => {
+  const ultimo = props.labels.length - 1
+  if (ultimo < 0) return 40
+  const largo = Math.max(0, ...props.series.map((s) => String(fmt(s.values[ultimo])).length))
+  return Math.max(40, Math.ceil(largo * ANCHO_CARACTER + 14))
+})
+const PAD = {
+  top: 12,
+  bottom: 26,
+  get left() {
+    return padLeft.value
+  },
+  get right() {
+    return padRight.value
+  },
+}
+
+const plotW = computed(() => WIDTH - PAD.left - PAD.right)
 const plotH = computed(() => props.height - PAD.top - PAD.bottom)
 
 // Máximo "bonito" para que los ticks sean números redondos
@@ -39,7 +74,7 @@ const maxY = computed(() => {
 })
 
 const x = (i) =>
-  props.labels.length > 1 ? PAD.left + (i / (props.labels.length - 1)) * plotW : PAD.left + plotW / 2
+  props.labels.length > 1 ? PAD.left + (i / (props.labels.length - 1)) * plotW.value : PAD.left + plotW.value / 2
 const y = (v) => PAD.top + plotH.value - (v / maxY.value) * plotH.value
 
 const ticks = computed(() =>
@@ -86,7 +121,7 @@ const contenedor = ref(null)
 const indiceMasCercano = (clientX) => {
   const rect = contenedor.value.getBoundingClientRect()
   const xSvg = ((clientX - rect.left) / rect.width) * WIDTH
-  const ratio = (xSvg - PAD.left) / plotW
+  const ratio = (xSvg - PAD.left) / plotW.value
   const i = Math.round(ratio * (props.labels.length - 1))
   return Math.min(Math.max(i, 0), props.labels.length - 1)
 }
@@ -157,7 +192,7 @@ const tooltipStyle = computed(() => {
             font-size="11"
             fill="#526359"
           >
-            {{ t.value }}
+            {{ fmt(t.value) }}
           </text>
         </g>
 
@@ -236,7 +271,7 @@ const tooltipStyle = computed(() => {
             font-weight="600"
             fill="#26332B"
           >
-            {{ e.valor }}
+            {{ fmt(e.valor) }}
           </text>
         </g>
       </svg>
@@ -252,7 +287,7 @@ const tooltipStyle = computed(() => {
         <ul class="space-y-1">
           <li v-for="s in series" :key="s.name" class="flex items-center gap-2 text-xs">
             <span class="inline-block w-3 h-0.5 rounded-full" :style="{ backgroundColor: s.color }" />
-            <span class="font-bold text-verdoso">{{ s.values[activo] }}</span>
+            <span class="font-bold text-verdoso">{{ fmtDetalle(s.values[activo]) }}</span>
             <span class="text-verdoso-muted">{{ s.name }}</span>
           </li>
         </ul>

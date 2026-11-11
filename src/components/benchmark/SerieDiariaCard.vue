@@ -19,6 +19,9 @@ const props = defineProps({
   labelEvery: { type: Number, default: 1 },
   loading: { type: Boolean, default: false },
   emptyText: { type: String, default: 'Sin interacciones registradas en este periodo.' },
+  // Opcionales: abreviar los valores del eje y la etiqueta final, y el detalle exacto del tooltip
+  formatValue: { type: Function, default: null },
+  formatDetalle: { type: Function, default: null },
 })
 
 const hayDatos = computed(() => props.series.some((s) => s.values.some((v) => v > 0)))
@@ -31,7 +34,14 @@ const hayDatos = computed(() => props.series.some((s) => s.values.some((v) => v 
     <p v-else-if="!hayDatos" class="text-sm text-verdoso-muted">{{ emptyText }}</p>
 
     <div v-else class="border-t border-borde pt-4">
-      <LineChart :labels="labels" :series="series" :label-every="labelEvery" :aria-label="ariaLabel" />
+      <LineChart
+        :labels="labels"
+        :series="series"
+        :label-every="labelEvery"
+        :aria-label="ariaLabel"
+        :format-value="formatValue"
+        :format-detalle="formatDetalle"
+      />
     </div>
   </SectionCard>
 </template>

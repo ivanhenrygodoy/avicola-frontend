@@ -20,7 +20,16 @@ import RankingCard from '@/components/benchmark/RankingCard.vue'
 import LogDetalleModal from '@/components/benchmark/LogDetalleModal.vue'
 import LimpiezaHistoricoModal from '@/components/benchmark/LimpiezaHistoricoModal.vue'
 import { provideActionLoader } from '@/composables/useActionLoader'
-import { resultadoInfo, RESULTADO_OPTIONS, etiquetaDia, formatNumber } from '@/utils/benchmark'
+import {
+  resultadoInfo,
+  RESULTADO_OPTIONS,
+  etiquetaDia,
+  formatNumber,
+  formatCompacto,
+  formatEjeCompacto,
+  formatDuracion,
+  formatPorcentaje,
+} from '@/utils/benchmark'
 
 import { BarChart3, ScrollText, Eye, Eraser } from 'lucide-vue-next'
 
@@ -58,10 +67,74 @@ const seriesInteracciones = computed(() => [
   { name: 'Con error', color: COLORES.errores, values: serie.value.map((s) => s.errores) },
 ])
 
+// Las dos líneas del mismo gráfico usan los mismos nombres que la tarjeta "Tokens consumidos"
 const seriesTokens = computed(() => [
-  { name: 'Prompt', color: COLORES.prompt, values: serie.value.map((s) => s.tokens_prompt) },
-  { name: 'Respuesta', color: COLORES.respuesta, values: serie.value.map((s) => s.tokens_respuesta) },
+  { name: 'Entrada', color: COLORES.prompt, values: serie.value.map((s) => s.tokens_prompt) },
+  { name: 'Salida', color: COLORES.respuesta, values: serie.value.map((s) => s.tokens_respuesta) },
 ])
+
+// Tarjetas de la sección Estadísticas. Un turno "con modelo" es el que no fue bloqueado por un guard
+// ni resuelto por la vía rápida (los errores del proveedor cuentan: llegaron al modelo).
+const unidad = (n, singular, plural) => `${formatNumber(n)} ${n === 1 ? singular : plural}`
+
+const tarjetasUso = computed(() => {
+  const t = totales.value ?? {}
+  return [
+    {
+      title: 'Interacciones',
+      value: formatNumber(t.interacciones),
+      valueColor: 'text-bosque',
+      subtitle: `${formatNumber(t.con_modelo)} con modelo · ${formatNumber(t.sin_modelo)} sin modelo`,
+    },
+    {
+      title: 'Tokens consumidos',
+      value: formatCompacto(t.tokens_total),
+      subtitle: `Entrada ${formatCompacto(t.tokens_prompt)} · Salida ${formatCompacto(t.tokens_respuesta)}`,
+      hint: `${formatNumber(t.tokens_total)} tokens (entrada ${formatNumber(t.tokens_prompt)}, salida ${formatNumber(t.tokens_respuesta)})`,
+    },
+    {
+      title: 'Tokens por consulta al modelo',
+      value: formatCompacto(t.tokens_por_consulta),
+      subtitle: `Promedio sobre ${unidad(t.con_modelo ?? 0, 'consulta', 'consultas')}`,
+      hint: `${formatNumber(t.tokens_por_consulta)} tokens por consulta, sin contar bloqueos ni saludos`,
+    },
+    {
+      title: 'Llamadas al modelo por consulta',
+      value: Number(t.llamadas_por_consulta ?? 0).toLocaleString('es-ES', { maximumFractionDigits: 1 }),
+      subtitle: 'Cada vuelta de herramienta reenvía el contexto',
+    },
+  ]
+})
+
+const tarjetasCalidad = computed(() => {
+  const t = totales.value ?? {}
+  return [
+    {
+      title: 'Resueltas',
+      value: formatNumber(t.resueltas),
+      valueColor: 'text-bosque',
+      subtitle: `${formatPorcentaje(t.pct_resueltas)} de las interacciones`,
+    },
+    {
+      title: 'Bloqueadas por guards',
+      value: formatNumber(t.bloqueadas),
+      subtitle: `${formatPorcentaje(t.pct_bloqueadas)} · no llegaron al modelo`,
+    },
+    {
+      title: 'Errores del proveedor',
+      value: formatNumber(t.errores),
+      valueColor: 'text-verdoso-muted',
+      subtitle: `${formatPorcentaje(t.pct_errores)} · ${formatDuracion(t.espera_errores_ms)} de espera acumulada`,
+    },
+    {
+      title: 'Latencia típica',
+      value: formatDuracion(t.latencia_mediana_ms),
+      valueColor: 'text-verdoso-muted',
+      subtitle: `El 10 % más lento: ${formatDuracion(t.latencia_p90_ms)}`,
+      hint: 'Mediana y percentil 90 de las consultas que llegaron al modelo',
+    },
+  ]
+})
 
 const itemsResultado = computed(() =>
   (stats.value?.por_resultado ?? []).map((r) => ({
@@ -187,16 +260,30 @@ onMounted(() => {
           />
         </div>
 
-        <!-- Indicadores clave -->
+        <!-- Indicadores clave: uso y consumo -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard title="Interacciones" :value="formatNumber(totales?.interacciones)" value-color-class="text-bosque" />
-          <StatCard title="Tasa de éxito" :value="`${totales?.tasa_exito ?? 0}%`" value-color-class="text-verdoso" />
           <StatCard
-            title="Tokens consumidos"
-            :value="`${formatNumber(totales?.tokens_total)} · ${formatNumber(totales?.tokens_promedio)} por turno`"
-            value-color-class="text-verdoso"
+            v-for="tarjeta in tarjetasUso"
+            :key="tarjeta.title"
+            :title="tarjeta.title"
+            :value="tarjeta.value"
+            :subtitle="tarjeta.subtitle"
+            :hint="tarjeta.hint"
+            :value-color-class="tarjeta.valueColor"
           />
-          <StatCard title="Latencia promedio" :value="`${formatNumber(totales?.latencia_promedio_ms)} ms`" value-color-class="text-verdoso-muted" />
+        </div>
+
+        <!-- Indicadores clave: calidad y rendimiento -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard
+            v-for="tarjeta in tarjetasCalidad"
+            :key="tarjeta.title"
+            :title="tarjeta.title"
+            :value="tarjeta.value"
+            :subtitle="tarjeta.subtitle"
+            :hint="tarjeta.hint"
+            :value-color-class="tarjeta.valueColor"
+          />
         </div>
 
         <!-- Gráficos por día -->
@@ -218,7 +305,9 @@ onMounted(() => {
             :label-every="labelEvery"
             :loading="store.loadingStats"
             empty-text="Sin consumo de tokens en este periodo."
-            :aria-label="`Tokens de prompt y de respuesta por día, últimos ${store.dias} días`"
+            :format-value="formatEjeCompacto"
+            :format-detalle="formatNumber"
+            :aria-label="`Tokens de entrada y de salida por día, últimos ${store.dias} días`"
           />
         </div>
 
