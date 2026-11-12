@@ -1,13 +1,16 @@
 <script setup>
-import { ref, nextTick, watch } from 'vue'
+import { ref, nextTick, watch, onMounted } from 'vue'
 import { useAsistenteStore } from '@/stores/asistente'
 import GallinaIcon from '@/components/common/GallinaIcon.vue'
+import LoadingState from '@/components/common/LoadingState.vue'
 import AsistenteMensaje from './AsistenteMensaje.vue'
 import AsistenteIndicador from './AsistenteIndicador.vue'
+import HistorialConversacionesModal from './HistorialConversacionesModal.vue'
 import {
   X,
   Send,
   Trash2,
+  History,
   ChevronDown,
   HelpCircle,
 } from 'lucide-vue-next'
@@ -16,6 +19,18 @@ const asistenteStore = useAsistenteStore()
 
 const textoInput = ref('')
 const contenedorMensajes = ref(null)
+const mostrarHistorial = ref(false)
+
+// Al montarse (el widget solo existe con sesión iniciada) se recupera la conversación que había abierta
+// antes de recargar la página, si el navegador guardó su UUID.
+onMounted(async () => {
+  await asistenteStore.cargarConversacion()
+  scrollToBottom()
+})
+
+// Historial y Limpiar quedan bloqueados mientras hay un mensaje en curso o se carga una conversación:
+// si no, la respuesta tardía llegaría a un chat ya cambiado.
+const ocupado = () => asistenteStore.cargando || asistenteStore.cargandoConversacion
 
 const sugerencias = [
   '¿Cuántas aves activas hay en total?',
@@ -48,7 +63,7 @@ watch(
 
 const handleEnviar = async () => {
   const texto = textoInput.value.trim()
-  if (!texto || asistenteStore.cargando) return
+  if (!texto || ocupado()) return
 
   textoInput.value = ''
   await asistenteStore.enviarMensaje(texto)
@@ -97,10 +112,21 @@ const aplicarSugerencia = (sugerencia) => {
           <div class="flex items-center gap-1 text-white/80">
             <button
               type="button"
-              class="w-7 h-7 rounded-lg hover:bg-white/10 flex items-center justify-center transition-colors"
+              class="w-7 h-7 rounded-lg hover:bg-white/10 flex items-center justify-center transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              title="Historial de conversaciones"
+              aria-label="Historial de conversaciones"
+              :disabled="ocupado()"
+              @click="mostrarHistorial = true"
+            >
+              <History class="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              class="w-7 h-7 rounded-lg hover:bg-white/10 flex items-center justify-center transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               title="Limpiar conversación"
               aria-label="Limpiar conversación"
-              @click="asistenteStore.limpiarHistorial"
+              :disabled="ocupado()"
+              @click="asistenteStore.limpiarHistorial()"
             >
               <Trash2 class="w-4 h-4" />
             </button>
@@ -121,9 +147,16 @@ const aplicarSugerencia = (sugerencia) => {
           ref="contenedorMensajes"
           class="flex-1 overflow-y-auto p-4 space-y-3.5 bg-crema-surface/60"
         >
+          <!-- Recuperando la conversación guardada tras recargar la página -->
+          <LoadingState
+            v-if="asistenteStore.cargandoConversacion"
+            message="Cargando conversación..."
+            submessage=""
+          />
+
           <!-- Estado Inicial sin Mensajes -->
           <div
-            v-if="!asistenteStore.tieneMensajes"
+            v-else-if="!asistenteStore.tieneMensajes"
             class="h-full flex flex-col justify-center items-center text-center p-4 space-y-3"
           >
             <div class="w-12 h-12 rounded-2xl bg-bosque-50 border border-salvia/30 flex items-center justify-center text-bosque shadow-2xs">
@@ -180,11 +213,11 @@ const aplicarSugerencia = (sugerencia) => {
               maxlength="1000"
               placeholder="Pregunta sobre aves, huevos, gastos..."
               class="flex-1 px-3.5 py-2 text-xs rounded-xl bg-crema-surface border border-borde text-verdoso placeholder-verdoso-muted/70 focus:outline-none focus:border-salvia focus:ring-1 focus:ring-salvia transition-colors"
-              :disabled="asistenteStore.cargando"
+              :disabled="ocupado()"
             />
             <button
               type="submit"
-              :disabled="!textoInput.trim() || asistenteStore.cargando"
+              :disabled="!textoInput.trim() || ocupado()"
               class="w-9 h-9 rounded-xl bg-bosque hover:bg-bosque-hover text-white flex items-center justify-center shrink-0 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-150 shadow-xs cursor-pointer"
               title="Enviar consulta"
               aria-label="Enviar consulta"
@@ -220,6 +253,13 @@ const aplicarSugerencia = (sugerencia) => {
         {{ asistenteStore.totalMensajes }}
       </span>
     </button>
+
+    <!-- Historial de conversaciones (se teletransporta al body: no depende del tamaño de la ventana del chat) -->
+    <HistorialConversacionesModal
+      :is-open="mostrarHistorial"
+      @close="mostrarHistorial = false"
+      @opened="scrollToBottom"
+    />
   </div>
 </template>
 

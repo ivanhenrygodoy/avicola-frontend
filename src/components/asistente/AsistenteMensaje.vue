@@ -32,10 +32,26 @@ const nombresHerramientas = {
   consultar_manuales_tecnicos: 'Manuales técnicos zootécnicos',
 }
 
+// Escapa el HTML del texto ANTES de aplicar el formato ligero. El texto proviene del usuario o del
+// modelo y ahora se guarda y se vuelve a pintar al reabrir la conversación: sin escapar, un mensaje con
+// `<img onerror=...>` se ejecutaría cada vez que se abra. Solo se emiten las etiquetas que genera
+// `formatearTexto` (<br/>, <strong>, <div>, <span>, <a>).
+const escaparHtml = (texto) =>
+  String(texto)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+
+// Solo se permiten enlaces http(s) y rutas internas; `javascript:` y similares se descartan. Una ruta interna
+// no puede empezar por `//` ni `/\`: el navegador las toma como un sitio externo (`//evil.com`).
+const urlSegura = (url) => (/^(https?:\/\/|\/(?![/\\]))/i.test(url.trim()) ? url.trim() : '#')
+
 const formatearTexto = (texto) => {
   if (!texto) return ''
   // Reemplazar saltos de línea dobles y simples
-  return texto
+  return escaparHtml(texto)
     .replace(/\n\n/g, '<br/><br/>')
     .replace(/\n/g, '<br/>')
     // Negritas básicas **texto**
@@ -43,7 +59,7 @@ const formatearTexto = (texto) => {
     // Viñetas simples * item
     .replace(/(?:^|<br\/>)\*\s+(.*?)(?=(?:<br\/>|$))/g, '<div class="flex items-start gap-1.5 my-0.5"><span class="text-salvia shrink-0">•</span><span>$1</span></div>')
     // Enlaces markdown [texto](url)
-    .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" class="text-bosque underline font-medium hover:text-salvia">$1</a>')
+    .replace(/\[(.*?)\]\(([^)]*?)\)/g, (_, etiqueta, url) => `<a href="${urlSegura(url)}" class="text-bosque underline font-medium hover:text-salvia">${etiqueta}</a>`)
 }
 </script>
 

@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import api from '@/services/api'
+import { useAsistenteStore } from '@/stores/asistente'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
@@ -49,6 +50,11 @@ export const useAuthStore = defineStore('auth', {
         this.user = null
         localStorage.removeItem('avicola_token')
         localStorage.removeItem('avicola_user')
+        // El chat y su UUID son de este usuario: si otro inicia sesión en el mismo navegador sin recargar,
+        // no debe ver sus mensajes. Cubre el cierre manual y el de fetchCurrentUser. El cierre por 401
+        // (interceptor de api.js) recarga la página; ahí el servidor es quien protege, porque responde 404
+        // a un UUID que no es del usuario autenticado.
+        useAsistenteStore().reiniciar()
       }
     },
 

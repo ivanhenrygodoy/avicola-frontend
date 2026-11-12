@@ -24,6 +24,9 @@ api.interceptors.response.use(
     if (error.response && error.response.status === 401) {
       localStorage.removeItem('avicola_token')
       localStorage.removeItem('avicola_user')
+      // El chat guarda el UUID de su conversación en localStorage; al vencer la sesión se olvida también
+      // (la página se recarga, así que el store del asistente no llega a reiniciarse).
+      localStorage.removeItem('avicola_asistente_uuid')
       if (window.location.pathname !== '/login') {
         window.location.href = '/login'
       }
