@@ -82,13 +82,26 @@ Flujo de datos: **vista → store (Pinia) → servicio (Axios) → API.** Las vi
 
 ## 3. Autenticación, rutas y capa HTTP
 
-**Rutas** (`router/index.js`): `/login` (solo invitados), `/` (dashboard), `/instalaciones`, `/aves`, `/produccion`, `/gastos` y `/benchmark`. Todas menos `/login` exigen sesión; cualquier otra ruta redirige a `/`. La guarda `beforeEach` redirige a `login` si no hay token y al dashboard si un usuario autenticado entra a `/login`.
+**Rutas** (`router/index.js`): `/login` (solo invitados) y, bajo el layout `AppLayout` (sidebar + barra superior), `/` (dashboard), `/instalaciones`, `/aves`, `/produccion`, `/gastos`, `/benchmark`, `/usuarios` y `/permisos`. Cada ruta de módulo declara `meta.modulo` (la clave del permiso) y `meta.subtitle` (el subtítulo de la barra superior). Cualquier otra ruta redirige a `/`.
 
-**Sesión** (`stores/auth.js`): el token Bearer y el usuario se guardan en `localStorage` (`avicola_token`, `avicola_user`). `logout` borra la sesión local aunque el backend falle.
+La guarda `beforeEach` aplica tres reglas: sin token → `login`; un autenticado en `/login` → su primer módulo permitido; y si la ruta pide un módulo que el usuario no tiene → lo manda al Dashboard (o al primer módulo que sí tenga) con el aviso «Ya no tienes acceso a ese módulo.». Un usuario sin ningún módulo vuelve al login en vez de entrar en bucle.
+
+**Sesión** (`stores/auth.js`): el token Bearer y el usuario (con su `rol`, el árbol `modulos`, la lista `permisos` y `debe_cambiar_password`) se guardan en `localStorage` (`avicola_token`, `avicola_user`). Getters y acciones útiles: `puede(clave)`, `modulos`, `esSuperAdmin`, `cambiarPassword(...)` (cierra la sesión al terminar bien) y `mantenerPassword()`. `main.js` vuelve a pedir `me` **antes de montar el router**, para que el menú y la guarda partan de permisos frescos y no de los guardados. `logout` borra la sesión local aunque el backend falle.
 
 **Cliente HTTP** (`services/api.js`): una instancia de Axios con dos interceptores:
 1. **Petición:** Añade encabezado `Authorization: Bearer <token>`.
-2. **Respuesta:** Ante un código **401**, limpia la sesión y redirige a `/login`.
+2. **Respuesta:** Ante un código **401**, limpia la sesión y redirige a `/login`. Ante un **403** con el mensaje de módulo denegado, vuelve a pedir `me`, actualiza el menú y, si la ruta actual ya no está permitida, lleva al usuario a un destino permitido con el aviso «Ya no tienes acceso a ese módulo.»; nunca muestra el error crudo.
+
+**Navegación y permisos.** El sidebar (`AppSidebar`) se arma solo con el árbol `modulos` que devuelve el servidor; la ocultación es comodidad y la seguridad es el 403 del backend. «Asistente IA» es un grupo expandible con «Benchmark» dentro, que solo aparece si el usuario tiene ese módulo; si no tiene ningún hijo visible, el grupo no se muestra. El chat flotante solo existe con el permiso `asistente`.
+
+| Rol | Acceso |
+|---|---|
+| `super_admin` | Todo, incluidas **Usuarios** y **Permisos** |
+| `operario` | Dashboard, Instalaciones, Inventario de Aves, Producción, Gastos y el chat; **Benchmark solo si el superAdmin se lo otorga** |
+
+**Gestión (solo superAdmin).** `Usuarios` lista cuentas con rol, estado y estado de las credenciales (`Enviando…`, `Enviadas`, `Falló el envío`); permite crear (el correo con la contraseña temporal sale por una cola del servidor), activar o desactivar y reenviar credenciales. Las acciones sobre uno mismo y sobre el único superAdmin activo quedan deshabilitadas con la razón en el `title`. `Permisos` muestra la matriz rol × módulo: los módulos base van bloqueados, el rol super en solo lectura y solo el Benchmark tiene interruptor.
+
+**Primer ingreso.** Si el usuario entró con una contraseña temporal, `PrimerIngresoModal` ofrece **Cambiar contraseña** (formulario; al terminar se cierran todas las sesiones y vuelve al login) o **Mantener esta contraseña**. Es un aviso suave: se puede cerrar con Escape o fuera del modal sin elegir y reaparece en el siguiente inicio de sesión.
 
 **Formato estándar de respuestas:** `{ success, message, data, meta, stats }`. `meta` alimenta `PaginationBar` o `DataTable`, y `stats` las tarjetas de indicadores.
 
@@ -102,7 +115,10 @@ Todos viven en `src/components/common/`. **Antes de escribir marcado nuevo, cons
 
 | Componente | Para qué sirve | Props principales | Eventos |
 |---|---|---|---|
-| `AppHeader` | Barra superior con navegación activa y badge de usuario responsivo | `subtitle` | — |
+| `AppLayout` | Layout de las rutas autenticadas: barra superior + sidebar + vista (`RouterView`); monta el aviso de primer ingreso | — | — |
+| `AppSidebar` | Menú lateral colapsable armado con los módulos que el servidor concede; en móvil (< `lg`) es un panel superpuesto con fondo que se cierra al navegar. Estado abierto/cerrado en `stores/navegacion.js` (`localStorage`, con `try/catch`) | — | — |
+| `AppHeader` | Barra superior: hamburguesa del sidebar, logo y título, nombre del usuario y «Cerrar sesión» (ya no lleva los módulos) | `subtitle` | — |
+| `PrimerIngresoModal` / `CambiarPasswordModal` | Aviso de contraseña temporal y formulario para cambiarla | `isOpen` | `close` |
 | `PageHeader` | Encabezado corporativo de vista (título Display, subtítulo y slot `#actions`) | `title`, `subtitle`, `align`, `bordered` | — |
 | `SectionCard` | Tarjeta con título, subtítulo y slot `#actions` | `title`, `subtitle` | — |
 | `CollapsibleCard` | Tarjeta con cabecera desplegable accesible (`aria-expanded`/`aria-controls`) | `title`, `subtitle`, `icon`, `defaultOpen` | `open`, `close` |
@@ -226,7 +242,10 @@ const eliminar = useConfirmAction({
   * `GastoFormModal.vue`: Registro y edición de comprobantes por categoría (`ctl_categorias_gastos`).
 
 ### 6.6 Inicio de Sesión (`LoginView.vue`)
-* Formulario protegido con `FormField` y gestión de errores contra el endpoint `POST /auth/login`.
+* Formulario protegido con `FormField` y gestión de errores contra el endpoint `POST /auth/login`. Un usuario desactivado ve «Tu cuenta está desactivada. Contacta al administrador.».
+
+### 6.6b Usuarios y Permisos (`UsuariosView.vue`, `PermisosView.vue`)
+* Solo superAdmin (ver [Navegación y permisos](#3-autenticación-rutas-y-capa-http)). Usan `PageHeader`, `DataTable`, `StatusBadge`, `RowActionButton`, `BaseConfirmModal`, `FormField` (vía `UsuarioFormModal`) y `provideActionLoader`. `UsuariosView` refresca la lista cada pocos segundos mientras haya credenciales `pendientes`, porque el correo sale por una cola.
 
 ### 6.7 Asistente Virtual AviaCore (`AsistenteChatWidget.vue`)
 * Widget conversacional flotante global montado en `App.vue` para usuarios autenticados.
