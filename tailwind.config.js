@@ -35,6 +35,17 @@ export default {
       backdropBlur: {
         xs: '4px',
       },
+      // Puntos del indicador «pensando»: se encienden y suben 3 px uno tras otro. El `bounce` de Tailwind
+      // solo mueve el 25 % de la altura del elemento (1 px en un punto de 4 px), casi invisible.
+      keyframes: {
+        pensando: {
+          '0%, 80%, 100%': { opacity: '0.3', transform: 'translateY(0)' },
+          '40%': { opacity: '1', transform: 'translateY(-3px)' },
+        },
+      },
+      animation: {
+        pensando: 'pensando 1.2s ease-in-out infinite',
+      },
       transitionDuration: {
         250: '250ms',
       },
