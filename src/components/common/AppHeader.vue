@@ -23,7 +23,24 @@ const handleLogout = async () => {
 </script>
 
 <template>
-  <header class="bg-white border-b border-borde sticky top-0 z-30 shadow-xs">
+  <!--
+    En escritorio (lg+) el contenido de la barra acompaña al sidebar: con el menú abierto se corre a la derecha
+    el ancho del sidebar (`lg:pl-64` = `w-64` de AppSidebar; si uno cambia, cambia el otro) y con el menú cerrado
+    vuelve a la izquierda. Es padding y no margen, así el fondo y el borde de la barra siguen ocupando todo el ancho.
+    Misma duración y curva que el sidebar para que se muevan a la vez (y, con «reducir movimiento», ninguno anima).
+    En móvil el sidebar es un panel superpuesto y la barra no se mueve.
+  -->
+  <header
+    :class="[
+      'bg-white border-b border-borde sticky top-0 z-30 shadow-xs',
+      // Todo lo de la transición va con `motion-safe:`: solo se anima si el sistema NO pide menos movimiento.
+      // No sirve el camino inverso (`motion-reduce:transition-none`): `lg:transition-[padding]` se genera después
+      // y lo pisaría. Tampoco vale dejar la duración suelta: sin `transition-property`, CSS usa `all` por defecto
+      // y una `duration-250` sola ya animaría el padding aunque se pida menos movimiento.
+      'motion-safe:lg:transition-[padding] motion-safe:lg:duration-250 motion-safe:lg:ease-out',
+      navegacion.abierto ? 'lg:pl-64' : 'lg:pl-0',
+    ]"
+  >
     <div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
       <!-- Hamburguesa + identidad de la granja -->
       <div class="flex items-center gap-3 sm:gap-4">

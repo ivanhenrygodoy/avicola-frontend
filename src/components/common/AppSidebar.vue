@@ -74,7 +74,7 @@ const claseItem = (activo) => [
     :aria-hidden="!navegacion.abierto"
     :class="[
       'fixed left-0 top-16 bottom-0 z-[35] w-64 bg-white border-r border-borde overflow-hidden',
-      'transition-all duration-250 ease-out',
+      'transition-all duration-250 ease-out motion-reduce:transition-none',
       'lg:sticky lg:z-20 lg:self-start lg:h-[calc(100vh-4rem)] lg:translate-x-0 lg:shrink-0',
       navegacion.abierto
         ? 'translate-x-0 lg:w-64'
