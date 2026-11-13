@@ -186,7 +186,7 @@ export const useAsistenteStore = defineStore('asistente', {
     },
 
     /**
-     * Quita una conversación del historial (cambio de estado en el servidor). Si era la abierta, el chat se
+     * Elimina una conversación del historial (cambio de estado en el servidor). Si era la abierta, el chat se
      * vacía y se olvida el UUID. Un 404 se trata como éxito: ya no está en el historial.
      */
     async eliminarConversacion(uuid) {

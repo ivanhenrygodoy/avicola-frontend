@@ -32,7 +32,7 @@ export const renombrarConversacion = async (uuid, nombre) => {
   return response.data.data
 }
 
-/** Quita la conversación del historial del usuario (cambio de estado, no borrado). */
+/** Elimina la conversación del historial del usuario (cambio de estado, no borrado). */
 export const eliminarConversacion = async (uuid) => {
   const response = await api.delete(`/asistente/conversaciones/${uuid}`)
   return response.data
