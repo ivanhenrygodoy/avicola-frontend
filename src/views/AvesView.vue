@@ -4,7 +4,6 @@ import { useAvesStore } from '@/stores/aves'
 import { useInstalacionesStore } from '@/stores/instalaciones'
 
 // Componentes comunes globales (SOLID - Impeccable)
-import AppHeader from '@/components/common/AppHeader.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
 import DataTable from '@/components/common/DataTable.vue'
@@ -179,9 +178,8 @@ const onAveReactivadaConfirmed = async () => {
 </script>
 
 <template>
-  <div class="min-h-screen flex flex-col bg-crema text-verdoso">
+  <div class="flex-1 flex flex-col">
     <!-- Navbar Superior Reutilizable (SOLID - Impeccable) -->
-    <AppHeader subtitle="Inventario de Aves" />
 
     <!-- Contenido Principal -->
     <main class="flex-1 max-w-[1600px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">

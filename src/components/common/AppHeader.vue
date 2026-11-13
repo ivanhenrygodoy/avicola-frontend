@@ -1,20 +1,9 @@
 <script setup>
-import { ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useNavegacionStore } from '@/stores/navegacion'
 import GallinaIcon from '@/components/common/GallinaIcon.vue'
-import {
-  LayoutDashboard,
-  Home,
-  Layers,
-  Egg,
-  DollarSign,
-  Activity,
-  User,
-  LogOut,
-  Menu,
-  X,
-} from 'lucide-vue-next'
+import { User, LogOut, Menu, X } from 'lucide-vue-next'
 
 defineProps({
   subtitle: {
@@ -23,74 +12,34 @@ defineProps({
   },
 })
 
-const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
-
-const isMobileMenuOpen = ref(false)
-
-const toggleMobileMenu = () => {
-  isMobileMenuOpen.value = !isMobileMenuOpen.value
-}
+const navegacion = useNavegacionStore()
 
 const handleLogout = async () => {
   await authStore.logout()
   router.push({ name: 'login' })
-}
-
-const navItems = [
-  {
-    name: 'Dashboard',
-    to: '/',
-    icon: LayoutDashboard,
-    exact: true,
-  },
-  {
-    name: 'Instalaciones',
-    to: '/instalaciones',
-    icon: Home,
-    exact: false,
-  },
-  {
-    name: 'Inventario de Aves',
-    to: '/aves',
-    icon: Layers,
-    exact: false,
-  },
-  {
-    name: 'Producción',
-    to: '/produccion',
-    icon: Egg,
-    exact: false,
-  },
-  {
-    name: 'Gastos',
-    to: '/gastos',
-    icon: DollarSign,
-    exact: false,
-  },
-  {
-    name: 'Benchmark',
-    to: '/benchmark',
-    icon: Activity,
-    exact: false,
-  },
-]
-
-const isActive = (item) => {
-  if (item.exact) {
-    return route.path === item.to
-  }
-  return route.path.startsWith(item.to)
 }
 </script>
 
 <template>
   <header class="bg-white border-b border-borde sticky top-0 z-30 shadow-xs">
     <div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-      <!-- Identidad y Navegación Principal -->
-      <div class="flex items-center gap-6">
-        <!-- Logo y Título de la Granja -->
+      <!-- Hamburguesa + identidad de la granja -->
+      <div class="flex items-center gap-3 sm:gap-4">
+        <button
+          type="button"
+          @click="navegacion.alternar()"
+          class="p-2 text-verdoso hover:text-bosque hover:bg-crema rounded-xl transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-salvia"
+          :aria-expanded="navegacion.abierto"
+          :aria-label="navegacion.abierto ? 'Ocultar menú de navegación' : 'Mostrar menú de navegación'"
+          :title="navegacion.abierto ? 'Ocultar menú' : 'Mostrar menú'"
+        >
+          <X v-if="navegacion.abierto" class="w-6 h-6 lg:hidden" />
+          <Menu v-if="navegacion.abierto" class="w-6 h-6 hidden lg:block" />
+          <Menu v-else class="w-6 h-6" />
+        </button>
+
         <router-link
           to="/"
           class="flex items-center gap-3 group focus:outline-none focus-visible:ring-2 focus-visible:ring-salvia rounded-xl p-0.5"
@@ -105,32 +54,11 @@ const isActive = (item) => {
             <span class="text-xs text-salvia font-semibold block">{{ subtitle }}</span>
           </div>
         </router-link>
-
-        <!-- Navegación de Escritorio (lg+): la cabecera completa necesita ~1050px, por eso no empieza en md -->
-        <nav class="hidden lg:flex items-center gap-1.5" aria-label="Navegación principal">
-          <router-link
-            v-for="item in navItems"
-            :key="item.to"
-            :to="item.to"
-            :class="[
-              'px-3.5 py-2 text-sm rounded-xl flex items-center gap-2 transition-all',
-              isActive(item)
-                ? 'font-semibold text-bosque bg-bosque-50 border border-bosque/20 shadow-2xs'
-                : 'font-medium text-verdoso-muted hover:text-verdoso hover:bg-crema/70'
-            ]"
-          >
-            <component
-              :is="item.icon"
-              :class="['w-4 h-4', isActive(item) ? 'text-bosque' : 'text-salvia']"
-            />
-            <span>{{ item.name }}</span>
-          </router-link>
-        </nav>
       </div>
 
-      <!-- Acciones de Usuario & Botón Móvil -->
+      <!-- Acciones de usuario -->
       <div class="flex items-center gap-3 sm:gap-4">
-        <!-- Badge de Usuario Autenticado: con nombre desde xl; entre lg y xl solo el icono (el nombre va en title) -->
+        <!-- Badge de usuario: con nombre desde xl; entre lg y xl solo el icono (el nombre va en title) -->
         <div
           class="hidden lg:flex items-center gap-2 text-sm text-verdoso bg-crema px-3.5 py-1.5 rounded-full border border-borde"
           :title="authStore.user?.name || 'Administrador'"
@@ -140,7 +68,6 @@ const isActive = (item) => {
           <span class="font-medium hidden xl:inline">{{ authStore.user?.name || 'Administrador' }}</span>
         </div>
 
-        <!-- Botón Cerrar Sesión -->
         <button
           @click="handleLogout"
           class="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-sm font-semibold text-red-700 bg-red-50 hover:bg-red-100 rounded-full border border-red-200 transition-colors cursor-pointer"
@@ -150,59 +77,7 @@ const isActive = (item) => {
           <LogOut class="w-4 h-4" />
           <span class="hidden sm:inline">Cerrar Sesión</span>
         </button>
-
-        <!-- Botón Menú Móvil (md:hidden) -->
-        <button
-          @click="toggleMobileMenu"
-          class="lg:hidden p-2 text-verdoso hover:text-bosque hover:bg-crema rounded-xl transition-colors cursor-pointer"
-          :aria-expanded="isMobileMenuOpen"
-          aria-label="Abrir menú de navegación"
-        >
-          <Menu v-if="!isMobileMenuOpen" class="w-6 h-6" />
-          <X v-else class="w-6 h-6" />
-        </button>
       </div>
     </div>
-
-    <!-- Menú Desplegable Móvil (Transición suave para pantallas táctiles) -->
-    <Transition
-      enter-active-class="transition-all duration-200 ease-out"
-      enter-from-class="opacity-0 -translate-y-2"
-      enter-to-class="opacity-100 translate-y-0"
-      leave-active-class="transition-all duration-150 ease-in"
-      leave-from-class="opacity-100 translate-y-0"
-      leave-to-class="opacity-0 -translate-y-2"
-    >
-      <div
-        v-if="isMobileMenuOpen"
-        class="lg:hidden border-t border-borde bg-white px-4 pt-3 pb-4 space-y-1.5 shadow-md"
-      >
-        <router-link
-          v-for="item in navItems"
-          :key="item.to"
-          :to="item.to"
-          @click="isMobileMenuOpen = false"
-          :class="[
-            'px-3.5 py-2.5 text-sm rounded-xl flex items-center gap-3 transition-colors',
-            isActive(item)
-              ? 'font-semibold text-bosque bg-bosque-50 border border-bosque/20'
-              : 'font-medium text-verdoso-muted hover:text-verdoso hover:bg-crema'
-          ]"
-        >
-          <component
-            :is="item.icon"
-            :class="['w-5 h-5', isActive(item) ? 'text-bosque' : 'text-salvia']"
-          />
-          <span>{{ item.name }}</span>
-        </router-link>
-
-        <!-- Usuario en el menú desplegable (visible en todo el rango en que el badge de la barra no está) -->
-        <div class="pt-2 mt-2 border-t border-borde flex items-center gap-2 px-3.5 text-xs text-verdoso-muted">
-          <User class="w-4 h-4 text-salvia" />
-          <span>Conectado como <strong class="text-verdoso">{{ authStore.user?.name || 'Administrador' }}</strong></span>
-        </div>
-      </div>
-    </Transition>
   </header>
 </template>
-

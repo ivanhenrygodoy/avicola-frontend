@@ -4,7 +4,6 @@ import { useBenchmarkStore } from '@/stores/benchmark'
 import { useNotificationStore } from '@/stores/notification'
 
 // Componentes comunes globales
-import AppHeader from '@/components/common/AppHeader.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
 import BaseAlert from '@/components/common/BaseAlert.vue'
 import PillTabs from '@/components/common/PillTabs.vue'
@@ -227,8 +226,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="min-h-screen flex flex-col bg-crema text-verdoso">
-    <AppHeader subtitle="Benchmark AviaCore" />
+  <div class="flex-1 flex flex-col">
 
     <main class="flex-1 max-w-[1600px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       <PageHeader

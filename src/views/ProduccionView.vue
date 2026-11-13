@@ -9,7 +9,6 @@ import BaseConfirmModal from '@/components/common/BaseConfirmModal.vue'
 import ActionLoader from '@/components/common/ActionLoader.vue'
 import StatCard from '@/components/common/StatCard.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
-import AppHeader from '@/components/common/AppHeader.vue'
 import StatusBadge from '@/components/common/StatusBadge.vue'
 import RowActionButton from '@/components/common/RowActionButton.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
@@ -185,9 +184,8 @@ const executeDelete = async () => {
 </script>
 
 <template>
-  <div class="min-h-screen flex flex-col bg-crema text-verdoso">
+  <div class="flex-1 flex flex-col">
     <!-- Navbar Superior -->
-    <AppHeader subtitle="Alimentación y Postura" />
 
     <main class="flex-1 max-w-[1600px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       <!-- Selector de Pestañas Principal -->

@@ -2,7 +2,6 @@
 import { onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useDashboardStore } from '@/stores/dashboard'
-import AppHeader from '@/components/common/AppHeader.vue'
 import GallinaIcon from '@/components/common/GallinaIcon.vue'
 import BaseAlert from '@/components/common/BaseAlert.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
@@ -48,8 +47,7 @@ const fechaFormateada = fechaActual.charAt(0).toUpperCase() + fechaActual.slice(
 </script>
 
 <template>
-  <div class="min-h-screen flex flex-col bg-crema text-verdoso">
-    <AppHeader subtitle="Panel de Control" />
+  <div class="flex-1 flex flex-col">
 
     <main class="flex-1 max-w-[1600px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       <!-- Encabezado -->

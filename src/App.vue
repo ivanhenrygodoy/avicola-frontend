@@ -11,6 +11,7 @@ const authStore = useAuthStore()
   <div class="min-h-screen bg-crema text-verdoso antialiased">
     <RouterView />
     <AlertToast />
-    <AsistenteChatWidget v-if="authStore.isAuthenticated" />
+    <!-- El chat solo existe con el módulo `asistente` (R20): sin él sus rutas responden 403 -->
+    <AsistenteChatWidget v-if="authStore.isAuthenticated && authStore.puede('asistente')" />
   </div>
 </template>
