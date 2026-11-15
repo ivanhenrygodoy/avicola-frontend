@@ -51,5 +51,10 @@ export const useNavegacionStore = defineStore('navegacion', {
     cerrarSiEsMovil() {
       if (!esEscritorio()) this.abierto = false
     },
+
+    // Al cruzar el breakpoint `lg`, adapta el estado sin sobrescribir la preferencia de escritorio.
+    sincronizarModo(esDesktop) {
+      this.abierto = esDesktop ? (leer() ?? true) : false
+    },
   },
 })

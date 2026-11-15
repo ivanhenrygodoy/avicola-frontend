@@ -1,12 +1,28 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted, onUnmounted } from 'vue'
 import { RouterView, useRoute } from 'vue-router'
 import AppHeader from '@/components/common/AppHeader.vue'
 import AppSidebar from '@/components/common/AppSidebar.vue'
 import PrimerIngresoModal from '@/components/common/PrimerIngresoModal.vue'
+import { useNavegacionStore } from '@/stores/navegacion'
 
 const route = useRoute()
+const navegacion = useNavegacionStore()
 const subtitle = computed(() => route.meta.subtitle || 'Gestión Avícola')
+
+let mediaQuery = null
+const alCambiarBreakpoint = (e) => navegacion.sincronizarModo(e.matches)
+
+onMounted(() => {
+  if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
+    mediaQuery = window.matchMedia('(min-width: 1024px)')
+    mediaQuery.addEventListener('change', alCambiarBreakpoint)
+  }
+})
+
+onUnmounted(() => {
+  mediaQuery?.removeEventListener('change', alCambiarBreakpoint)
+})
 </script>
 
 <template>

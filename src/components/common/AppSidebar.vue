@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useNavegacionStore } from '@/stores/navegacion'
@@ -42,8 +42,17 @@ const alternarGrupo = (nodo) => {
   abiertos.value = { ...abiertos.value, [nodo.clave]: !estaExpandido(nodo) }
 }
 
-// En móvil el panel se cierra al navegar
+// En móvil el panel se cierra al navegar o al presionar Escape
 watch(() => route.path, () => navegacion.cerrarSiEsMovil())
+
+const alPresionarEscape = (e) => {
+  if (e.key === 'Escape' && navegacion.abierto) {
+    navegacion.cerrarSiEsMovil()
+  }
+}
+
+onMounted(() => window.addEventListener('keydown', alPresionarEscape))
+onUnmounted(() => window.removeEventListener('keydown', alPresionarEscape))
 
 const claseItem = (activo) => [
   'w-full px-3.5 py-2 text-sm rounded-xl flex items-center gap-2.5 transition-all text-left',
@@ -74,7 +83,7 @@ const claseItem = (activo) => [
     :aria-hidden="!navegacion.abierto"
     :class="[
       'fixed left-0 top-16 bottom-0 z-[35] w-64 bg-white border-r border-borde overflow-hidden',
-      'transition-all duration-250 ease-out motion-reduce:transition-none',
+      'transition-[width,transform] duration-250 ease-out motion-reduce:transition-none',
       'lg:sticky lg:z-20 lg:self-start lg:h-[calc(100vh-4rem)] lg:translate-x-0 lg:shrink-0',
       navegacion.abierto
         ? 'translate-x-0 lg:w-64'

@@ -1,13 +1,14 @@
 <script setup>
-import GallinaIcon from '@/components/common/GallinaIcon.vue'
+import GallinaCaminando from '@/components/asistente/GallinaCaminando.vue'
 
 /**
- * Indicador de «pensando» del chat: el logo del proyecto con un pulso suave, el texto y tres puntos que se
- * encienden y suben en secuencia (keyframe `pensando` de tailwind.config.js). Todo es CSS: sin dependencias.
+ * Indicador de «pensando» del chat: la gallinita animada caminando dentro de su badge,
+ * el texto de estado y tres puntos que se encienden y suben en secuencia (keyframe `pensando`).
+ * Componente 100% modular con animaciones CSS puras, sin dependencias externas.
  *
- * `texto` es el mensaje sin los puntos suspensivos finales. Con «reducir movimiento» activado nada se
- * anima: los puntos animados se ocultan y se muestra un «…» fijo, así nunca se ven ambos.
- * Es un `role="status"`: el lector de pantalla lo anuncia una vez; los puntos son decorativos (aria-hidden).
+ * `texto` es el mensaje sin los puntos suspensivos finales. Con «reducir movimiento» activado
+ * nada se anima y se muestra un «…» fijo accesible.
+ * Es un `role="status"`: el lector de pantalla lo anuncia una vez; los elementos animados son decorativos.
  */
 defineProps({
   texto: {
@@ -24,9 +25,9 @@ defineProps({
     aria-live="polite"
   >
     <div
-      class="w-8 h-8 rounded-full bg-white border border-salvia/40 flex items-center justify-center shrink-0 animate-pulse motion-reduce:animate-none"
+      class="w-8 h-8 rounded-full bg-white border border-salvia/40 flex items-center justify-center shrink-0 overflow-hidden relative"
     >
-      <GallinaIcon class="w-5 h-5 text-bosque" />
+      <GallinaCaminando class="w-5 h-5 text-bosque" />
     </div>
 
     <span class="text-xs font-medium text-verdoso tracking-tight select-none">
@@ -39,7 +40,6 @@ defineProps({
       </span>
       <!-- Movimiento reducido: puntos suspensivos fijos -->
       <span class="hidden motion-reduce:inline" aria-hidden="true">…</span>
-
     </span>
   </div>
 </template>

@@ -117,7 +117,7 @@ Todos viven en `src/components/common/`. **Antes de escribir marcado nuevo, cons
 |---|---|---|---|
 | `AppLayout` | Layout de las rutas autenticadas: barra superior + sidebar + vista (`RouterView`); monta el aviso de primer ingreso | — | — |
 | `AppSidebar` | Menú lateral colapsable armado con los módulos que el servidor concede; en móvil (< `lg`) es un panel superpuesto con fondo que se cierra al navegar. Estado abierto/cerrado en `stores/navegacion.js` (`localStorage`, con `try/catch`) | — | — |
-| `AppHeader` | Barra superior: hamburguesa del sidebar, logo y título, nombre del usuario y «Cerrar sesión» (ya no lleva los módulos). En escritorio (`lg`+) su contenido acompaña al sidebar: con el menú abierto se corre 256 px a la derecha (`lg:pl-64`, el mismo ancho que `w-64` de `AppSidebar`; si uno cambia, cambia el otro) y con el menú cerrado vuelve a la izquierda, con la misma duración y curva. Es padding, así el fondo y el borde de la barra ocupan siempre todo el ancho. En móvil no se mueve; con «reducir movimiento» el cambio es inmediato | `subtitle` | — |
+| `AppHeader` | Barra superior fija de lado a lado: hamburguesa del sidebar, logo y título siempre anclados a la izquierda, nombre del usuario y «Cerrar sesión» a la derecha | `subtitle` | — |
 | `PrimerIngresoModal` / `CambiarPasswordModal` | Aviso de contraseña temporal y formulario para cambiarla | `isOpen` | `close` |
 | `PageHeader` | Encabezado corporativo de vista (título Display, subtítulo y slot `#actions`) | `title`, `subtitle`, `align`, `bordered` | — |
 | `SectionCard` | Tarjeta con título, subtítulo y slot `#actions` | `title`, `subtitle` | — |
