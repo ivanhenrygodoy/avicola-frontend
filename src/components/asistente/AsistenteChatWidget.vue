@@ -95,7 +95,7 @@ const aplicarSugerencia = (sugerencia) => {
         <div class="bg-bosque text-white p-3.5 flex items-center justify-between shrink-0 shadow-xs">
           <div class="flex items-center gap-2.5">
             <div class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white border border-white/20">
-              <GallinaIcon class="w-5 h-5 text-salvia-100" />
+              <GallinaIcon class="w-5 h-5 text-salvia-100 gallina-nocturna-blanca" />
             </div>
             <div>
               <h3 class="text-sm font-bold tracking-tight text-white flex items-center gap-1.5">
@@ -160,7 +160,7 @@ const aplicarSugerencia = (sugerencia) => {
             class="h-full flex flex-col justify-center items-center text-center p-4 space-y-3"
           >
             <div class="w-12 h-12 rounded-2xl bg-bosque-50 border border-salvia/30 flex items-center justify-center text-bosque shadow-2xs">
-              <GallinaIcon class="w-7 h-7 text-bosque" />
+              <GallinaIcon class="w-7 h-7 text-bosque gallina-nocturna-blanca" />
             </div>
             <div class="space-y-1">
               <h4 class="text-sm font-bold text-verdoso">
@@ -243,7 +243,7 @@ const aplicarSugerencia = (sugerencia) => {
       @click="asistenteStore.toggleWidget"
     >
       <X v-if="asistenteStore.isOpen" class="w-6 h-6 transition-transform duration-200" />
-      <GallinaIcon v-else class="w-7 h-7 text-salvia-100 transition-transform duration-200" />
+      <GallinaIcon v-else class="w-7 h-7 text-salvia-100 gallina-nocturna-blanca transition-transform duration-200" />
 
       <!-- Badge de actividad si hay mensajes y está cerrado -->
       <span

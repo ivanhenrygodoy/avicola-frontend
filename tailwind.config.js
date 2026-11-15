@@ -1,4 +1,6 @@
 /** @type {import('tailwindcss').Config} */
+const conOpacidad = (variable) => `rgb(var(${variable}) / <alpha-value>)`
+
 export default {
   content: [
     "./index.html",
@@ -7,36 +9,35 @@ export default {
   theme: {
     extend: {
       colors: {
-        bosque: '#244B36',
-        'bosque-hover': '#1b3829',
-        'bosque-50': '#f2f7f4',
-        'bosque-100': '#e2ede7',
-        salvia: '#6F9678',
-        'salvia-hover': '#587a60',
-        'salvia-50': '#f4f7f5',
-        'salvia-100': '#e5ece7',
-        crema: '#F5F3EA',
-        huevo: '#D9A441',
-        'huevo-suave': '#FFF1CC',
-        tierra: '#8B6548',
-        'tierra-50': '#fbf8f5',
-        verdoso: '#26332B',
-        'verdoso-muted': '#526359',
-        borde: '#E4E7DF',
-        destructivo: '#B91C1C',
-        'destructivo-bg': '#FEF2F2',
+        bosque: conOpacidad('--avicola-bosque'),
+        'bosque-hover': conOpacidad('--avicola-bosque-hover'),
+        'bosque-50': conOpacidad('--avicola-bosque-50'),
+        'bosque-100': conOpacidad('--avicola-bosque-100'),
+        salvia: conOpacidad('--avicola-salvia'),
+        'salvia-hover': conOpacidad('--avicola-salvia-hover'),
+        'salvia-50': conOpacidad('--avicola-bosque-50'),
+        'salvia-100': conOpacidad('--avicola-bosque-100'),
+        crema: conOpacidad('--avicola-crema'),
+        'crema-surface': conOpacidad('--avicola-crema-surface'),
+        huevo: conOpacidad('--avicola-huevo'),
+        'huevo-suave': conOpacidad('--avicola-huevo-suave'),
+        tierra: conOpacidad('--avicola-tierra'),
+        'tierra-50': conOpacidad('--avicola-crema-surface'),
+        verdoso: conOpacidad('--avicola-verdoso'),
+        'verdoso-muted': conOpacidad('--avicola-verdoso-muted'),
+        borde: conOpacidad('--avicola-borde'),
+        destructivo: conOpacidad('--avicola-destructivo'),
+        'destructivo-bg': conOpacidad('--avicola-destructivo-bg'),
       },
       // Utilidades que el proyecto ya usa (nombres de Tailwind 4) y que Tailwind 3 no trae.
-      // Sin esto las clases se ignoraban en silencio; los valores son los de Tailwind 4.
       boxShadow: {
         '2xs': '0 1px rgb(0 0 0 / 0.05)',
-        xs: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
+        xs: 'var(--avicola-shadow-xs, 0 1px 2px 0 rgb(0 0 0 / 0.05))',
+        card: 'var(--avicola-shadow-card, 0 4px 12px -2px rgb(38 51 43 / 0.08))',
       },
       backdropBlur: {
         xs: '4px',
       },
-      // Puntos del indicador «pensando»: se encienden y suben 3 px uno tras otro. El `bounce` de Tailwind
-      // solo mueve el 25 % de la altura del elemento (1 px en un punto de 4 px), casi invisible.
       keyframes: {
         pensando: {
           '0%, 80%, 100%': { opacity: '0.3', transform: 'translateY(0)' },

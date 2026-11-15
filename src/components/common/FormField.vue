@@ -59,14 +59,14 @@ defineEmits(['update:modelValue', 'blur', 'enter', 'input'])
 </script>
 
 <template>
-  <div class="space-y-1 text-left">
+  <div class="avicola-form-field space-y-1 text-left">
     <!-- Etiqueta estándar sobre el campo (sin descriptor notch) -->
     <label
       v-if="label"
       :for="id"
       :class="[
         'block text-xs font-bold uppercase tracking-wider',
-        error ? 'text-red-600' : 'text-verdoso'
+        error ? 'text-red-600' : 'avicola-form-label text-verdoso'
       ]"
     >
       {{ label }}
@@ -104,7 +104,7 @@ defineEmits(['update:modelValue', 'blur', 'enter', 'input'])
           'block w-full px-3.5 py-2.5 rounded-xl text-sm text-verdoso bg-white outline-none transition-colors shadow-2xs',
           error
             ? 'border-2 border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500'
-            : 'border border-borde focus:border-bosque focus:ring-1 focus:ring-bosque placeholder:text-verdoso-muted/70',
+            : 'avicola-form-control border border-borde focus:border-bosque focus:ring-1 focus:ring-bosque placeholder:text-verdoso-muted/70',
           disabled ? 'bg-crema cursor-not-allowed opacity-60' : ''
         ]"
       ></textarea>
@@ -121,7 +121,7 @@ defineEmits(['update:modelValue', 'blur', 'enter', 'input'])
           'block w-full px-3.5 py-2.5 rounded-xl text-sm text-verdoso bg-white outline-none transition-colors shadow-2xs cursor-pointer',
           error
             ? 'border-2 border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500'
-            : 'border border-borde focus:border-bosque focus:ring-1 focus:ring-bosque',
+            : 'avicola-form-control border border-borde focus:border-bosque focus:ring-1 focus:ring-bosque',
           disabled ? 'bg-crema cursor-not-allowed opacity-60' : ''
         ]"
       >
@@ -156,7 +156,7 @@ defineEmits(['update:modelValue', 'blur', 'enter', 'input'])
           $slots.suffix ? 'pr-10' : 'pr-3.5',
           error
             ? 'border-2 border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500'
-            : 'border border-borde focus:border-bosque focus:ring-1 focus:ring-bosque placeholder:text-verdoso-muted/70',
+            : 'avicola-form-control border border-borde focus:border-bosque focus:ring-1 focus:ring-bosque placeholder:text-verdoso-muted/70',
           disabled ? 'bg-crema cursor-not-allowed opacity-60' : ''
         ]"
       />

@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import api from '@/services/api'
 import { useAsistenteStore } from '@/stores/asistente'
+import { useTemaStore } from '@/stores/tema'
 
 // Un JSON corrupto o un localStorage bloqueado no deben tumbar la aplicación al arrancar
 const leerUsuarioGuardado = () => {
@@ -46,6 +47,9 @@ export const useAuthStore = defineStore('auth', {
 
     _guardarUsuario(user) {
       this.user = user
+      if (user?.modo_tema) {
+        useTemaStore().sincronizarDesdeUsuario(user.modo_tema)
+      }
       try {
         localStorage.setItem('avicola_user', JSON.stringify(user))
       } catch {

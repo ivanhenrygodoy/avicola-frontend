@@ -27,7 +27,7 @@ defineProps({
     <div
       class="w-8 h-8 rounded-full bg-white border border-salvia/40 flex items-center justify-center shrink-0 overflow-hidden relative"
     >
-      <GallinaCaminando class="w-5 h-5 text-bosque" />
+      <GallinaCaminando class="w-5 h-5 text-bosque gallina-nocturna-blanca" />
     </div>
 
     <span class="text-xs font-medium text-verdoso tracking-tight select-none">

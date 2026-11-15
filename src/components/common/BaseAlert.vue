@@ -38,10 +38,10 @@ const config = computed(() => {
       }
     case 'success':
       return {
-        bgClass: 'bg-[#DDF3E3] border-[#BBF7D0]',
-        textClass: 'text-[#244B36]',
-        iconClass: 'text-[#166534]',
-        closeHoverClass: 'hover:bg-[#cbeed4] text-[#244B36]',
+        bgClass: 'avicola-alert-success',
+        textClass: '',
+        iconClass: '',
+        closeHoverClass: 'hover:opacity-80',
         icon: CheckCircle2,
       }
     case 'info':

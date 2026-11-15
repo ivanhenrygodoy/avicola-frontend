@@ -3,6 +3,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useNavegacionStore } from '@/stores/navegacion'
 import GallinaIcon from '@/components/common/GallinaIcon.vue'
+import ThemeToggle from '@/components/common/ThemeToggle.vue'
 import { User, LogOut, Menu, X } from 'lucide-vue-next'
 
 defineProps({
@@ -61,7 +62,9 @@ const handleLogout = async () => {
       </div>
 
       <!-- Acciones de usuario -->
-      <div class="flex items-center gap-3 sm:gap-4">
+      <div class="flex items-center gap-2.5 sm:gap-3.5">
+        <ThemeToggle />
+
         <!-- Badge de usuario: con nombre desde xl; entre lg y xl solo el icono (el nombre va en title) -->
         <div
           class="hidden lg:flex items-center gap-2 text-sm text-verdoso bg-crema px-3.5 py-1.5 rounded-full border border-borde"
