@@ -64,6 +64,12 @@ const routes = [
         component: () => import('@/views/PermisosView.vue'),
         meta: { requiresAuth: true, modulo: 'permisos', subtitle: 'Permisos por Rol' },
       },
+      {
+        path: 'apariencia',
+        name: 'apariencia',
+        component: () => import('@/views/AparienciaView.vue'),
+        meta: { requiresAuth: true, modulo: 'apariencia', subtitle: 'Apariencia y Paleta' },
+      },
     ],
   },
   {
@@ -78,7 +84,7 @@ const router = createRouter({
 })
 
 // Orden en que se busca un destino alternativo si el usuario no tiene el Dashboard
-const ORDEN_MODULOS = ['dashboard', 'instalaciones', 'aves', 'produccion', 'gastos', 'usuarios', 'permisos']
+const ORDEN_MODULOS = ['dashboard', 'instalaciones', 'aves', 'produccion', 'gastos', 'usuarios', 'permisos', 'apariencia']
 
 // Primer destino permitido: el Dashboard o, si tampoco lo tiene, el primer módulo con ruta que sí tenga
 export const destinoPermitido = (authStore) => {
