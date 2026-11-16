@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-11-16  
 **Vista Principal:** `src/views/FuentesConocimientoView.vue` (`/asistente/fuentes`)  
-**Estado:** En revisión y ajuste según `DESIGN.md` y `SKILL.md`
+**Estado:** Finalizado con éxito
 
 ---
 
