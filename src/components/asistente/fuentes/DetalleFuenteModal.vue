@@ -59,7 +59,7 @@ const procesarBorrador = async () => {
   try {
     await loader.run('Fragmentando documento y generando vectores embeddings...', async () => {
       await store.procesarFuente(fuente.value.id)
-      notify.success('Fuente procesada, troceada y vectorizada con éxito.')
+      notify.success('Fuente procesada, fragmentada y vectorizada con éxito.')
     })
   } catch (err) {
     notify.error(err.response?.data?.message || 'Error al procesar la fuente.')
@@ -219,7 +219,7 @@ const descargar = async () => {
               Esta fuente no cuenta con fragmentos indexados todavía.
             </p>
             <p class="text-xs text-verdoso-muted max-w-md mx-auto">
-              Se encuentra en estado <strong>Borrador</strong>. Haz clic en <em>«Procesar e Indexar»</em> para fragmentar el texto y calcular los vectores embeddings.
+              Se encuentra en estado <strong>Borrador</strong>. Haz clic en <strong>Procesar e Indexar</strong> para fragmentar el texto y calcular los vectores embeddings.
             </p>
           </div>
 
@@ -282,7 +282,7 @@ const descargar = async () => {
 
         <button
           type="button"
-          :class="esBorrador ? 'btn-secundario px-5 py-2.5 text-sm' : 'btn-principal px-5 py-2.5 text-sm'"
+          class="btn-secundario px-5 py-2.5 text-sm"
           @click="emit('close')"
         >
           Cerrar

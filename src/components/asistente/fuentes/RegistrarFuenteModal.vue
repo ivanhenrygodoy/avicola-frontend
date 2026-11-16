@@ -308,7 +308,7 @@ const enviar = async (accion) => {
             @update:error="errores.textoContenido = $event"
           />
           <div class="flex justify-between items-center text-[11px] text-verdoso-muted">
-            <span>Se troceará en fragmentos semánticos con sus vectores embeddings.</span>
+            <span>El contenido se dividirá en fragmentos semánticos para su indexación vectorial.</span>
             <span>{{ textoContenido.length }} caracteres</span>
           </div>
         </div>

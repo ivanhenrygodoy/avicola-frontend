@@ -352,7 +352,7 @@ onMounted(async () => {
       :is-open="confirmRestaurarComponente"
       title="Restaurar valores por defecto"
       :message="`¿Deseas restablecer los colores predeterminados de ${temaStore.componenteActual?.nombre || 'este componente'} para el modo ${modoEdicion}?`"
-      confirm-text="Sí, restaurar"
+      confirm-text="Restaurar"
       @confirm="ejecutarRestaurarComponente"
       @close="confirmRestaurarComponente = false"
     />
@@ -362,7 +362,7 @@ onMounted(async () => {
       :is-open="confirmRestaurarTodo"
       title="Restaurar toda la paleta"
       message="Esta acción devolverá todos los componentes (modo claro y nocturno) a los colores predeterminados del sistema."
-      confirm-text="Sí, restaurar todo"
+      confirm-text="Restaurar todo"
       @confirm="ejecutarRestaurarTodo"
       @close="confirmRestaurarTodo = false"
     />

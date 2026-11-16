@@ -82,12 +82,12 @@ const abrirConfirmacionEstado = (fuente) => {
     fuente,
     titulo: estaPublicada ? 'Archivar fuente de conocimiento' : 'Publicar fuente de conocimiento',
     pregunta: estaPublicada
-      ? `¿Deseas archivar «${fuente.titulo}»?`
-      : `¿Deseas publicar nuevamente «${fuente.titulo}»?`,
+      ? `¿Deseas archivar "${fuente.titulo}"?`
+      : `¿Deseas publicar nuevamente "${fuente.titulo}"?`,
     descripcion: estaPublicada
       ? 'La fuente dejará de estar disponible para el asistente AviaCore y no será consultada en las búsquedas vectoriales. No se eliminarán sus fragmentos.'
       : 'La fuente volverá a estar activa de inmediato y el asistente la consultará al responder preguntas zootécnicas.',
-    confirmText: estaPublicada ? 'Sí, archivar' : 'Sí, publicar',
+    confirmText: estaPublicada ? 'Archivar' : 'Publicar',
     esDestructivo: estaPublicada,
   }
 }
