@@ -73,7 +73,7 @@ const submit = async () => {
 
 <template>
   <BaseModal :is-open="isOpen" title="Cambiar contraseña" max-width="md" :closable="!guardando" @close="emit('close')">
-    <form class="space-y-4" @submit.prevent="submit">
+    <form id="cambiar-password-form" class="space-y-4" @submit.prevent="submit">
       <p class="text-sm text-verdoso-muted">
         Al cambiarla se cerrarán todas tus sesiones y tendrás que iniciar sesión de nuevo.
       </p>
@@ -112,24 +112,26 @@ const submit = async () => {
         @input="errors.set('password_confirmation', '')"
       />
 
-      <div class="pt-4 flex items-center justify-end gap-3 border-t border-borde">
-        <button
-          type="button"
-          class="px-5 py-2.5 btn-secundario text-sm cursor-pointer"
-          :disabled="guardando"
-          @click="emit('close')"
-        >
-          Cancelar
-        </button>
-        <button
-          type="submit"
-          class="px-6 py-2.5 btn-principal text-sm shadow-xs cursor-pointer flex items-center gap-1.5"
-          :disabled="guardando"
-        >
-          <Loader2 v-if="guardando" class="w-4 h-4 animate-spin" />
-          <span>{{ guardando ? 'Guardando...' : 'Cambiar contraseña' }}</span>
-        </button>
-      </div>
     </form>
+
+    <template #footer>
+      <button
+        type="button"
+        class="px-5 py-2.5 btn-secundario text-sm cursor-pointer"
+        :disabled="guardando"
+        @click="emit('close')"
+      >
+        Cancelar
+      </button>
+      <button
+        type="submit"
+        form="cambiar-password-form"
+        class="px-6 py-2.5 btn-principal text-sm shadow-xs cursor-pointer flex items-center gap-1.5"
+        :disabled="guardando"
+      >
+        <Loader2 v-if="guardando" class="w-4 h-4 animate-spin" />
+        <span>{{ guardando ? 'Guardando...' : 'Cambiar contraseña' }}</span>
+      </button>
+    </template>
   </BaseModal>
 </template>
