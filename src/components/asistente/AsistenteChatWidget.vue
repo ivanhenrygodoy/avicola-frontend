@@ -103,7 +103,7 @@ const aplicarSugerencia = (sugerencia) => {
                 <span class="inline-block w-2 h-2 rounded-full bg-salvia animate-pulse" />
               </h3>
               <p class="text-[11px] text-white/75 font-normal">
-                Consultas operativas en lenguaje natural
+                Consultas operativas y crianza avícola
               </p>
             </div>
           </div>
@@ -167,7 +167,7 @@ const aplicarSugerencia = (sugerencia) => {
                 ¿En qué puedo ayudarte hoy?
               </h4>
               <p class="text-xs text-verdoso-muted max-w-xs">
-                Soy AviaCore. Puedo consultar el censo de aves, postura de huevos, raciones de alimento, gastos y ubicación de animales.
+                Soy AviaCore. Puedo consultar el censo de aves, postura de huevos, raciones de alimento, gastos y ubicación de animales, así como responder consultas sobre crianza avícola casera, manejo y bioseguridad según nuestra base de conocimiento.
               </p>
             </div>
 
@@ -211,7 +211,7 @@ const aplicarSugerencia = (sugerencia) => {
               v-model="textoInput"
               type="text"
               maxlength="1000"
-              placeholder="Pregunta sobre aves, huevos, gastos..."
+              placeholder="Pregunta sobre aves, crianza, huevos, gastos..."
               class="flex-1 px-3.5 py-2 text-xs rounded-xl bg-crema-surface border border-borde text-verdoso placeholder-verdoso-muted/70 focus:outline-none focus:border-salvia focus:ring-1 focus:ring-salvia transition-colors"
               :disabled="ocupado()"
             />
@@ -227,7 +227,7 @@ const aplicarSugerencia = (sugerencia) => {
           </form>
           <div class="flex items-center justify-between text-[10px] text-verdoso-muted/70 px-1 pt-1.5">
             <span>Presiona Enter para enviar</span>
-            <span>AviaCore IA + Function Calling</span>
+            <span>AviaCore IA · Datos y Base RAG</span>
           </div>
         </div>
       </div>
