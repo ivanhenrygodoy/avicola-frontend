@@ -15,6 +15,7 @@ import {
   Users,
   ShieldCheck,
   Palette,
+  BookOpen,
   ChevronDown,
   Circle,
 } from 'lucide-vue-next'
@@ -24,7 +25,7 @@ const authStore = useAuthStore()
 const navegacion = useNavegacionStore()
 
 // Los nombres de icono llegan del servidor (módulos sembrados); si llega uno desconocido, un círculo
-const ICONOS = { LayoutDashboard, Home, Layers, Egg, DollarSign, Bot, Activity, Users, ShieldCheck, Palette }
+const ICONOS = { LayoutDashboard, Home, Layers, Egg, DollarSign, Bot, Activity, Users, ShieldCheck, Palette, BookOpen }
 const iconoDe = (nombre) => ICONOS[nombre] || Circle
 
 const modulos = computed(() => authStore.modulos)

@@ -82,7 +82,7 @@ Flujo de datos: **vista → store (Pinia) → servicio (Axios) → API.** Las vi
 
 ## 3. Autenticación, rutas y capa HTTP
 
-**Rutas** (`router/index.js`): `/login` (solo invitados) y, bajo el layout `AppLayout` (sidebar + barra superior), `/` (dashboard), `/instalaciones`, `/aves`, `/produccion`, `/gastos`, `/benchmark`, `/usuarios` y `/permisos`. Cada ruta de módulo declara `meta.modulo` (la clave del permiso) y `meta.subtitle` (el subtítulo de la barra superior). Cualquier otra ruta redirige a `/`.
+**Rutas** (`router/index.js`): `/login` (solo invitados) y, bajo el layout `AppLayout` (sidebar + barra superior), `/` (dashboard), `/instalaciones`, `/aves`, `/produccion`, `/gastos`, `/benchmark`, `/asistente/fuentes`, `/usuarios` y `/permisos`. Cada ruta de módulo declara `meta.modulo` (la clave del permiso) y `meta.subtitle` (el subtítulo de la barra superior). Cualquier otra ruta redirige a `/`.
 
 La guarda `beforeEach` aplica tres reglas: sin token → `login`; un autenticado en `/login` → su primer módulo permitido; y si la ruta pide un módulo que el usuario no tiene → lo manda al Dashboard (o al primer módulo que sí tenga) con el aviso «Ya no tienes acceso a ese módulo.». Un usuario sin ningún módulo vuelve al login en vez de entrar en bucle.
 

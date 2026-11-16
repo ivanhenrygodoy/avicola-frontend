@@ -53,6 +53,12 @@ const routes = [
         meta: { requiresAuth: true, modulo: 'benchmark', subtitle: 'Benchmark AviaCore' },
       },
       {
+        path: 'asistente/fuentes',
+        name: 'fuentes_conocimiento',
+        component: () => import('@/views/FuentesConocimientoView.vue'),
+        meta: { requiresAuth: true, modulo: 'fuentes_conocimiento', subtitle: 'Fuentes de Conocimiento RAG' },
+      },
+      {
         path: 'usuarios',
         name: 'usuarios',
         component: () => import('@/views/UsuariosView.vue'),
