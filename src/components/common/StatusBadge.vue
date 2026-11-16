@@ -37,7 +37,7 @@ const props = defineProps({
 
 // Clases completas (no interpoladas) para que Tailwind no las elimine al compilar
 const VARIANTS = {
-  success: 'bg-[#DDF3E3] text-bosque border-bosque/20',
+  success: 'avicola-badge-success',
   danger: 'bg-[#FEE2E2] text-[#991B1B] border-red-200',
   warning: 'bg-huevo-suave text-amber-800 border-amber-200',
   info: 'bg-blue-50 text-blue-800 border-blue-200',

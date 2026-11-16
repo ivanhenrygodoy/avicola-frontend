@@ -3,6 +3,7 @@ import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
 import { useAuthStore } from '@/stores/auth'
+import { useTemaStore } from '@/stores/tema'
 import './style.css'
 
 const app = createApp(App)
@@ -21,12 +22,22 @@ const ESPERA_MAXIMA_ARRANQUE_MS = 4000
 
 const arrancar = async () => {
   const authStore = useAuthStore()
+  const temaStore = useTemaStore()
+
+  // Aplica caché local de inmediato para evitar parpadeo visual
+  temaStore.aplicarAlDocumento()
+
   if (authStore.isAuthenticated) {
     await Promise.race([
       authStore.fetchCurrentUser(),
       new Promise((resolve) => setTimeout(resolve, ESPERA_MAXIMA_ARRANQUE_MS)),
     ])
+    if (authStore.user?.modo_tema) {
+      temaStore.sincronizarDesdeUsuario(authStore.user.modo_tema)
+    }
   }
+
+  temaStore.cargarTemaActivo()
 
   app.use(router)
   app.mount('#app')

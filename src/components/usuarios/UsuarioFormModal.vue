@@ -78,7 +78,7 @@ const submit = async () => {
 
 <template>
   <BaseModal :is-open="isOpen" title="Crear usuario" max-width="md" @close="emit('close')">
-    <form class="space-y-4" @submit.prevent="submit">
+    <form id="usuario-form" class="space-y-4" @submit.prevent="submit">
       <FormField
         id="usuario-nombre"
         v-model="form.name"
@@ -122,23 +122,25 @@ const submit = async () => {
         </span>
       </p>
 
-      <div class="pt-4 flex items-center justify-end gap-3 border-t border-borde">
-        <button
-          type="button"
-          class="px-5 py-2.5 btn-secundario text-sm cursor-pointer"
-          :disabled="isSubmitting"
-          @click="emit('close')"
-        >
-          Cancelar
-        </button>
-        <button
-          type="submit"
-          class="px-6 py-2.5 btn-principal text-sm shadow-xs cursor-pointer flex items-center gap-1.5"
-          :disabled="isSubmitting"
-        >
-          <span>Crear usuario</span>
-        </button>
-      </div>
     </form>
+
+    <template #footer>
+      <button
+        type="button"
+        class="px-5 py-2.5 btn-secundario text-sm cursor-pointer"
+        :disabled="isSubmitting"
+        @click="emit('close')"
+      >
+        Cancelar
+      </button>
+      <button
+        type="submit"
+        form="usuario-form"
+        class="px-6 py-2.5 btn-principal text-sm shadow-xs cursor-pointer"
+        :disabled="isSubmitting"
+      >
+        Crear usuario
+      </button>
+    </template>
   </BaseModal>
 </template>

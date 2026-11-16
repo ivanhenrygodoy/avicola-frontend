@@ -95,7 +95,7 @@ const aplicarSugerencia = (sugerencia) => {
         <div class="bg-bosque text-white p-3.5 flex items-center justify-between shrink-0 shadow-xs">
           <div class="flex items-center gap-2.5">
             <div class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white border border-white/20">
-              <GallinaIcon class="w-5 h-5 text-salvia-100" />
+              <GallinaIcon class="w-5 h-5 text-salvia-100 gallina-nocturna-blanca" />
             </div>
             <div>
               <h3 class="text-sm font-bold tracking-tight text-white flex items-center gap-1.5">
@@ -103,7 +103,7 @@ const aplicarSugerencia = (sugerencia) => {
                 <span class="inline-block w-2 h-2 rounded-full bg-salvia animate-pulse" />
               </h3>
               <p class="text-[11px] text-white/75 font-normal">
-                Consultas operativas en lenguaje natural
+                Consultas operativas y crianza avícola
               </p>
             </div>
           </div>
@@ -160,14 +160,14 @@ const aplicarSugerencia = (sugerencia) => {
             class="h-full flex flex-col justify-center items-center text-center p-4 space-y-3"
           >
             <div class="w-12 h-12 rounded-2xl bg-bosque-50 border border-salvia/30 flex items-center justify-center text-bosque shadow-2xs">
-              <GallinaIcon class="w-7 h-7 text-bosque" />
+              <GallinaIcon class="w-7 h-7 text-bosque gallina-nocturna-blanca" />
             </div>
             <div class="space-y-1">
               <h4 class="text-sm font-bold text-verdoso">
                 ¿En qué puedo ayudarte hoy?
               </h4>
               <p class="text-xs text-verdoso-muted max-w-xs">
-                Soy AviaCore. Puedo consultar el censo de aves, postura de huevos, raciones de alimento, gastos y ubicación de animales.
+                Soy AviaCore. Puedo consultar el censo de aves, postura de huevos, raciones de alimento, gastos y ubicación de animales, así como responder consultas sobre crianza avícola casera, manejo y bioseguridad según nuestra base de conocimiento.
               </p>
             </div>
 
@@ -211,7 +211,7 @@ const aplicarSugerencia = (sugerencia) => {
               v-model="textoInput"
               type="text"
               maxlength="1000"
-              placeholder="Pregunta sobre aves, huevos, gastos..."
+              placeholder="Pregunta sobre aves, crianza, huevos, gastos..."
               class="flex-1 px-3.5 py-2 text-xs rounded-xl bg-crema-surface border border-borde text-verdoso placeholder-verdoso-muted/70 focus:outline-none focus:border-salvia focus:ring-1 focus:ring-salvia transition-colors"
               :disabled="ocupado()"
             />
@@ -227,7 +227,7 @@ const aplicarSugerencia = (sugerencia) => {
           </form>
           <div class="flex items-center justify-between text-[10px] text-verdoso-muted/70 px-1 pt-1.5">
             <span>Presiona Enter para enviar</span>
-            <span>AviaCore IA + Function Calling</span>
+            <span>AviaCore IA · Datos y Base RAG</span>
           </div>
         </div>
       </div>
@@ -243,7 +243,7 @@ const aplicarSugerencia = (sugerencia) => {
       @click="asistenteStore.toggleWidget"
     >
       <X v-if="asistenteStore.isOpen" class="w-6 h-6 transition-transform duration-200" />
-      <GallinaIcon v-else class="w-7 h-7 text-salvia-100 transition-transform duration-200" />
+      <GallinaIcon v-else class="w-7 h-7 text-salvia-100 gallina-nocturna-blanca transition-transform duration-200" />
 
       <!-- Badge de actividad si hay mensajes y está cerrado -->
       <span

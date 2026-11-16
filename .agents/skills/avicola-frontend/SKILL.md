@@ -129,3 +129,8 @@ src/
      - **Mapeo Backend 422:** Al recibir error 422 con objeto `errors`, vincular cada mensaje del backend a su correspondiente campo en el formulario.
    - **Campos de Filtros de Búsqueda:** Las barras de filtrado en tablas continúan utilizando `FloatingInput.vue` y `FloatingSelect.vue` (con notch label) y **NO** aplican validación de campo requerido ni bordes rojos de error.
 
+8. **Modo Nocturno Orgánico y Tokens Dinámicos (`--avicola-*`):**
+   - Toda nueva vista o componente debe usar tokens semánticos (`bg-crema`, `bg-white`, `bg-crema-surface`, `text-verdoso`, `text-verdoso-muted`, `border-borde`, `text-bosque`, `avicola-badge-success`, `avicola-alert-success`) en lugar de hexadecimales fijos de modo claro.
+   - El switch global (`ThemeToggle.vue`) y la paleta nocturna (`[data-theme='nocturno']`) deben mantener la identidad orgánica bosque/salvia sin degradados morados ni azules genéricos, respetando `prefers-reduced-motion: reduce`.
+   - Cuando el isotipo `GallinaIcon` o `GallinaCaminando` aparezca dentro de contenedores oscuros del asistente en modo nocturno, aplicar la clase `.gallina-nocturna-blanca`.
+

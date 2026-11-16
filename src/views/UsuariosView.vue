@@ -235,7 +235,7 @@ onBeforeUnmount(detenerRefresco)
           ? `¿Desactivar a ${cambiarEstado.target.value?.name}? No podrá iniciar sesión y se cerrarán sus sesiones abiertas.`
           : `¿Activar a ${cambiarEstado.target.value?.name}? Podrá volver a iniciar sesión.`
       "
-      :confirm-text="cambiarEstado.target.value?.activo ? 'Sí, desactivar' : 'Sí, activar'"
+      :confirm-text="cambiarEstado.target.value?.activo ? 'Desactivar' : 'Activar'"
       cancel-text="Cancelar"
       :is-destructive="!!cambiarEstado.target.value?.activo"
       :is-loading="cambiarEstado.loading.value"

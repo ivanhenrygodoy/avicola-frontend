@@ -177,7 +177,7 @@ const sinLista = computed(() => !asistenteStore.conversaciones.length)
     title="Eliminar del historial"
     question="¿Eliminar esta conversación de tu historial?"
     description="Dejará de aparecer en tu historial. Podrás empezar otra conversación cuando quieras."
-    confirm-text="Sí, eliminar"
+    confirm-text="Eliminar"
     cancel-text="Cancelar"
     :is-destructive="true"
     :loading="eliminandoEnCurso"

@@ -2,10 +2,205 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================================================
+ * Tokens dinámicos de DESIGN.md (en canales RGB para soportar opacidades Tailwind)
+ * Modo Claro por defecto (valores exactos originales del sistema)
+ * ========================================================================== */
+:root {
+  --avicola-bosque: 36 75 54;            /* #244B36 */
+  --avicola-bosque-hover: 27 56 41;      /* #1B3829 */
+  --avicola-bosque-50: 242 247 244;      /* #F2F7F4 */
+  --avicola-bosque-100: 226 237 231;     /* #E2EDE7 */
+  --avicola-salvia: 111 150 120;         /* #6F9678 */
+  --avicola-salvia-hover: 88 122 96;     /* #587A60 */
+  --avicola-crema: 245 243 234;          /* #F5F3EA */
+  --avicola-crema-surface: 250 248 245;  /* #FAF8F5 */
+  --avicola-blanco: 255 255 255;         /* #FFFFFF */
+  --avicola-verdoso: 38 51 43;           /* #26332B */
+  --avicola-verdoso-muted: 82 99 89;     /* #526359 */
+  --avicola-borde: 228 231 223;          /* #E4E7DF */
+  --avicola-huevo: 217 164 65;           /* #D9A441 */
+  --avicola-huevo-suave: 255 241 204;    /* #FFF1CC */
+  --avicola-tierra: 139 101 72;          /* #8B6548 */
+  --avicola-destructivo: 185 28 28;      /* #B91C1C */
+  --avicola-destructivo-bg: 254 242 242; /* #FEF2F2 */
+  --avicola-exito-bg: 221 243 227;       /* #DDF3E3 */
+  --avicola-exito-text: 36 75 54;        /* #244B36 */
+
+  /* Botones */
+  --avicola-btn-primario-bg: 36 75 54;
+  --avicola-btn-primario-hover: 27 56 41;
+  --avicola-btn-primario-text: 255 255 255;
+  --avicola-btn-secundario-bg: 255 255 255;
+  --avicola-btn-secundario-border: 36 75 54;
+  --avicola-btn-secundario-text: 36 75 54;
+  --avicola-btn-destructivo-bg: 36 75 54;
+  --avicola-btn-destructivo-hover: 27 56 41;
+
+  /* Formularios, Cajas de Texto y Filtros */
+  --avicola-form-bg: 255 255 255;
+  --avicola-form-text: 38 51 43;
+  --avicola-form-label: 82 99 89;
+  --avicola-form-border: 228 231 223;
+  --avicola-filter-bg: 255 255 255;
+  --avicola-filter-notch: 111 150 120;
+  --avicola-filter-border: 228 231 223;
+
+  /* Ribetes y Sombras */
+  --avicola-ring-focus: 111 150 120;
+  --avicola-shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --avicola-shadow-card: 0 4px 12px -2px rgb(38 51 43 / 0.08);
+}
+
+/* Modo Nocturno Orgánico (sin azules ni morados genéricos) */
+[data-theme='nocturno'] {
+  color-scheme: dark;
+  --avicola-bosque: 59 122 87;           /* #3B7A57 */
+  --avicola-bosque-hover: 47 99 70;      /* #2F6346 */
+  --avicola-bosque-50: 30 51 40;         /* #1E3328 */
+  --avicola-bosque-100: 38 66 52;        /* #264234 */
+  --avicola-salvia: 122 168 133;         /* #7AA885 */
+  --avicola-salvia-hover: 99 141 110;    /* #638D6E */
+  --avicola-crema: 15 23 19;             /* #0F1713 */
+  --avicola-crema-surface: 29 43 36;     /* #1D2B24 */
+  --avicola-blanco: 22 34 28;            /* #16221C */
+  --avicola-verdoso: 232 239 234;        /* #E8EFEA */
+  --avicola-verdoso-muted: 155 178 164;  /* #9BB2A4 */
+  --avicola-borde: 37 56 46;             /* #25382E */
+  --avicola-huevo: 224 177 83;           /* #E0B153 */
+  --avicola-huevo-suave: 61 46 16;       /* #3D2E10 */
+  --avicola-tierra: 176 132 99;          /* #B08463 */
+  --avicola-destructivo: 239 68 68;      /* #EF4444 */
+  --avicola-destructivo-bg: 59 21 21;    /* #3B1515 */
+  --avicola-exito-bg: 27 59 43;          /* #1B3B2B */
+  --avicola-exito-text: 134 239 172;     /* #86EFAC */
+
+  --avicola-btn-primario-bg: 59 122 87;
+  --avicola-btn-primario-hover: 47 99 70;
+  --avicola-btn-primario-text: 255 255 255;
+  --avicola-btn-secundario-bg: 22 34 28;
+  --avicola-btn-secundario-border: 122 168 133;
+  --avicola-btn-secundario-text: 232 239 234;
+  --avicola-btn-destructivo-bg: 153 27 27;
+  --avicola-btn-destructivo-hover: 127 29 29;
+
+  --avicola-form-bg: 22 34 28;
+  --avicola-form-text: 232 239 234;
+  --avicola-form-label: 155 178 164;
+  --avicola-form-border: 37 56 46;
+  --avicola-filter-bg: 22 34 28;
+  --avicola-filter-notch: 122 168 133;
+  --avicola-filter-border: 37 56 46;
+
+  --avicola-ring-focus: 122 168 133;
+  --avicola-shadow-xs: 0 1px 3px 0 rgb(0 0 0 / 0.35);
+  --avicola-shadow-card: 0 6px 16px -2px rgb(0 0 0 / 0.45);
+}
+
+html {
+  background-color: rgb(var(--avicola-crema));
+}
+
 body {
-  background-color: #F5F3EA;
-  color: #26332B;
+  background-color: rgb(var(--avicola-crema));
+  color: rgb(var(--avicola-verdoso));
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+/* Transición de fallback suave solo cuando no se usa View Transitions (o en navegadores sin soporte) */
+html.theme-transitioning,
+html.theme-transitioning body,
+html.theme-transitioning *,
+html.theme-transitioning *::before,
+html.theme-transitioning *::after {
+  transition:
+    background-color 650ms cubic-bezier(0.25, 0.8, 0.25, 1),
+    border-color 650ms cubic-bezier(0.25, 0.8, 0.25, 1),
+    color 600ms cubic-bezier(0.25, 0.8, 0.25, 1),
+    box-shadow 650ms cubic-bezier(0.25, 0.8, 0.25, 1),
+    fill 600ms cubic-bezier(0.25, 0.8, 0.25, 1),
+    stroke 600ms cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.theme-transitioning,
+  html.theme-transitioning body,
+  html.theme-transitioning *,
+  html.theme-transitioning *::before,
+  html.theme-transitioning *::after {
+    transition: none !important;
+  }
+
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none !important;
+  }
+}
+
+/* ==========================================================================
+   Efecto de Expansión Circular para Modo Nocturno / Claro (View Transitions API)
+   ========================================================================== */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-old(root) {
+  z-index: 1;
+}
+
+::view-transition-new(root) {
+  z-index: 9999;
+}
+
+/* Superficies blancas dinámicas (tarjetas, navbar, sidebar, modales, notch labels) */
+.bg-white {
+  background-color: rgb(var(--avicola-blanco) / var(--tw-bg-opacity, 1));
+}
+
+/* Ribete de foco dinámico global */
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+button:focus-visible {
+  --tw-ring-color: rgb(var(--avicola-ring-focus) / 0.45);
+}
+
+/* Contornos y fondos dinámicos para FormField y cajas de filtro */
+.avicola-form-field .avicola-form-label {
+  color: rgb(var(--avicola-form-label));
+}
+
+.avicola-form-field .avicola-form-control {
+  background-color: rgb(var(--avicola-form-bg));
+  border-color: rgb(var(--avicola-form-border));
+  color: rgb(var(--avicola-form-text));
+}
+
+.floating-group input,
+.floating-group select,
+.floating-group textarea {
+  background-color: rgb(var(--avicola-filter-bg));
+  border-color: rgb(var(--avicola-filter-border));
+  color: rgb(var(--avicola-form-text));
+}
+
+.floating-group label {
+  color: rgb(var(--avicola-filter-notch));
+}
+
+/* Badges y alertas verdes dinámicos */
+.avicola-badge-success,
+.avicola-alert-success {
+  background-color: rgb(var(--avicola-exito-bg));
+  color: rgb(var(--avicola-exito-text));
+  border-color: rgb(var(--avicola-exito-text) / 0.25);
+}
+
+/* Ribete/silueta blanca para el isotipo de la gallina en modo nocturno */
+[data-theme='nocturno'] .gallina-nocturna-blanca {
+  color: #ffffff !important;
 }
 
 /* Scrollbars corporativos sutiles */
@@ -17,18 +212,18 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #E4E7DF;
+  background: rgb(var(--avicola-borde));
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #6F9678;
+  background: rgb(var(--avicola-salvia));
 }
 
 /* Clases de utilidad para botones corporativos */
 .btn-principal,
 .btn-primario {
-  background-color: #244B36 !important;
-  color: #ffffff !important;
+  background-color: rgb(var(--avicola-btn-primario-bg)) !important;
+  color: rgb(var(--avicola-btn-primario-text)) !important;
   font-weight: 600;
   border-radius: 9999px;
   transition: all 0.15s ease-in-out;
@@ -40,13 +235,13 @@ body {
 
 .btn-principal:hover,
 .btn-primario:hover {
-  background-color: #1b3829 !important;
+  background-color: rgb(var(--avicola-btn-primario-hover)) !important;
 }
 
 .btn-secundario {
-  background-color: #ffffff !important;
-  border: 1px solid #244B36 !important;
-  color: #244B36 !important;
+  background-color: rgb(var(--avicola-btn-secundario-bg)) !important;
+  border: 1px solid rgb(var(--avicola-btn-secundario-border)) !important;
+  color: rgb(var(--avicola-btn-secundario-text)) !important;
   font-weight: 600;
   border-radius: 9999px;
   transition: all 0.15s ease-in-out;
@@ -57,12 +252,12 @@ body {
 }
 
 .btn-secundario:hover {
-  background-color: #f2f7f4 !important;
+  background-color: rgb(var(--avicola-bosque-50)) !important;
 }
 
 .btn-destructivo {
-  background-color: #244B36 !important;
-  color: #ffffff !important;
+  background-color: rgb(var(--avicola-btn-destructivo-bg)) !important;
+  color: rgb(var(--avicola-btn-primario-text)) !important;
   font-weight: 600;
   border-radius: 9999px;
   transition: all 0.15s ease-in-out;
@@ -73,7 +268,18 @@ body {
 }
 
 .btn-destructivo:hover {
-  background-color: #1b3829 !important;
+  background-color: rgb(var(--avicola-btn-destructivo-hover)) !important;
+}
+
+/* Adaptación de badges/alertas estáticas en modo nocturno */
+:root[data-theme='nocturno'] .bg-red-50 {
+  background-color: rgb(var(--avicola-destructivo-bg));
+}
+:root[data-theme='nocturno'] .border-red-200 {
+  border-color: rgb(127 29 29 / 0.6);
+}
+:root[data-theme='nocturno'] .text-red-700 {
+  color: #FCA5A5;
 }
 
 /* Modales centrados absolutos en el viewport */
@@ -85,7 +291,7 @@ body {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  background-color: rgba(38, 51, 43, 0.5) !important;
+  background-color: rgba(15, 23, 19, 0.55) !important;
   backdrop-filter: blur(4px) !important;
   z-index: 9999 !important;
   padding: 1rem !important;
@@ -93,9 +299,9 @@ body {
 
 .modal-card {
   margin: auto !important;
+  box-shadow: var(--avicola-shadow-card);
 }
 
-/* Animación suave para la tarjeta del modal (el backdrop solo usa opacidad estática) */
 @keyframes modalZoomIn {
   0% {
     opacity: 0;

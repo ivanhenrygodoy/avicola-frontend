@@ -82,7 +82,7 @@ Flujo de datos: **vista → store (Pinia) → servicio (Axios) → API.** Las vi
 
 ## 3. Autenticación, rutas y capa HTTP
 
-**Rutas** (`router/index.js`): `/login` (solo invitados) y, bajo el layout `AppLayout` (sidebar + barra superior), `/` (dashboard), `/instalaciones`, `/aves`, `/produccion`, `/gastos`, `/benchmark`, `/usuarios` y `/permisos`. Cada ruta de módulo declara `meta.modulo` (la clave del permiso) y `meta.subtitle` (el subtítulo de la barra superior). Cualquier otra ruta redirige a `/`.
+**Rutas** (`router/index.js`): `/login` (solo invitados) y, bajo el layout `AppLayout` (sidebar + barra superior), `/` (dashboard), `/instalaciones`, `/aves`, `/produccion`, `/gastos`, `/benchmark`, `/asistente/fuentes`, `/usuarios` y `/permisos`. Cada ruta de módulo declara `meta.modulo` (la clave del permiso) y `meta.subtitle` (el subtítulo de la barra superior). Cualquier otra ruta redirige a `/`.
 
 La guarda `beforeEach` aplica tres reglas: sin token → `login`; un autenticado en `/login` → su primer módulo permitido; y si la ruta pide un módulo que el usuario no tiene → lo manda al Dashboard (o al primer módulo que sí tenga) con el aviso «Ya no tienes acceso a ese módulo.». Un usuario sin ningún módulo vuelve al login en vez de entrar en bucle.
 
@@ -285,6 +285,12 @@ Auditoría de las interacciones entre los operarios y el asistente, organizada c
 * `LimpiezaHistoricoModal.vue`: depuración manual del histórico antiguo del asistente sobre `BaseModal` con `RangeToggle` en píldoras (tamaño `md` con 3, 6 y 12 meses): banner con tokens `destructivo`/`destructivo-bg`, vista previa de registros a eliminar antes de confirmar (`aria-live="polite"`), botón bloqueado si hay 0 registros o carga en curso, y confirmación destructiva con `useActionLoader` y `notify`.
 * `utils/benchmark.js` es la fuente única de etiquetas y variantes de `StatusBadge` para resultado, acción y fase de los guards, de las opciones de meses para la depuración (`MESES_DEPURACION = [3, 6, 12]`) y de los formateadores de números: `formatNumber` (separador de miles desde 1.000, porque `es-ES` no agrupa los de cuatro cifras), `formatCompacto` ("66,4 mil", "1,2 M"), `formatEjeCompacto` (ejes de gráficos, sin decimal fijo), `formatDuracion` ("9,7 s", "1 min 48 s") y `formatPorcentaje`.
 * **Store (`stores/benchmark.js`):** solo la última petición de cada recurso (estadísticas, logs, detalle) puede escribir en el estado, así una respuesta lenta no pisa a una posterior al cambiar de rango, filtrar rápido o abrir otro log. Los errores de carga se muestran con `BaseAlert`. Al volver a una pestaña se recargan sus datos, porque las interacciones llegan mientras la vista está abierta.
+
+### 6.9 Apariencia y Modo Nocturno (`AparienciaView.vue`, `ThemeToggle.vue`)
+* **Switch global de nocturnidad (`ThemeToggle.vue`):** ubicado en `AppHeader.vue` (accesible mediante `role="switch"` y `aria-checked`), alterna entre **Modo Día** y **Modo Nocturno** usando tonos orgánicos bosque/salvia (`[data-theme='nocturno']`). Persiste en `localStorage` para evitar parpadeos y sincroniza con `PATCH /auth/preferencia-tema` cuando hay sesión activa.
+* **Transición suave:** `useTemaStore.alternarModoNocturno()` (`stores/tema.js`) activa temporalmente `html.theme-transitioning` (`720ms` con *reflow* forzado) para fundir suavemente (`650ms`) superficies, bordes, textos, sombras e iconos, respetando `prefers-reduced-motion: reduce`.
+* **Módulo administrable (`/apariencia`, solo `super_admin`):** layout maestro-detalle con búsqueda por componente, `PillTabs` para editar **Modo Claro** o **Modo Nocturno**, controles `AspectoEditorField.vue`, vista previa aislada en vivo (`AparienciaPreview.vue`), confirmación con `BaseConfirmModal` para restaurar componente o toda la paleta, y loader estándar `provideActionLoader()` + `<ActionLoader>`.
+* **Motor CSS dinámico (`src/style.css` y `tailwind.config.js`):** todos los tokens de `DESIGN.md` operan como variables CSS en canales RGB (`--avicola-*`) para soportar opacidades de Tailwind (`bg-bosque/20`, `border-salvia/40`), formularios (`.avicola-form-field`), badges/alertas verdes (`.avicola-badge-success`, `.avicola-alert-success`) y silueta blanca del isotipo en modo nocturno (`.gallina-nocturna-blanca`).
 
 ---
 

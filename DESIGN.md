@@ -145,6 +145,15 @@ La paleta cromática es normativa y proviene directamente de la identidad rural 
   - Sombra sutil ultra-suave (`shadow-xs` / `shadow-sm`) que simula elevación física sobre la superficie `{colors.crema}`.
 * **Backdrop modales:** Oscurecimiento cinematográfico `rgba(38, 51, 43, 0.4)` con desenfoque de fondo sutil (`backdrop-blur-xs`), manteniendo el foco absoluto en la tarea sin desorientar al usuario.
 
+### Modo Nocturno Orgánico y Tokens Dinámicos
+* **Identidad nocturna sin AI Slop:** El modo nocturno (`[data-theme='nocturno']`) deriva estrictamente de tonos bosque/salvia/pizarra orgánica:
+  - Fondo ambiental (`--avicola-crema`): `#0F1713` | Superficies elevadas/tarjetas (`--avicola-blanco`): `#16221C` | Superficie secundaria (`--avicola-crema-surface`): `#1D2B24`
+  - Contornos (`--avicola-borde`): `#25382E` | Tinta principal (`--avicola-verdoso`): `#E8EFEA` | Tinta secundaria (`--avicola-verdoso-muted`): `#9BB2A4`
+  - Acento primario (`--avicola-bosque`): `#3B7A57` (hover `#2F6346`) | Secundario (`--avicola-salvia`): `#7AA885`
+  - Éxito / Activo (`--avicola-exito-bg` / `--avicola-exito-text`): `#1B3B2B` / `#86EFAC`
+* **Motor CSS y contraste:** Los tokens se declaran como canales RGB (`--avicola-*`) en `src/style.css` para preservar opacidades Tailwind y personalización en vivo desde `/apariencia`. El isotipo de la gallina sobre fondos oscuros del asistente utiliza `.gallina-nocturna-blanca` para garantizar trazo blanco nítido en modo nocturno.
+* **Transición amigable:** El cambio claro ↔ nocturno aplica un fundido gradual (`650ms cubic-bezier(0.25, 0.8, 0.25, 1)`) deshabilitado automáticamente bajo `prefers-reduced-motion: reduce`.
+
 ---
 
 ## Shapes
