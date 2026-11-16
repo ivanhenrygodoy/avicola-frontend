@@ -9,8 +9,8 @@ const authStore = useAuthStore()
 
 const esNocturno = computed(() => temaStore.esNocturno)
 
-const alternar = () => {
-  temaStore.alternarModoNocturno(authStore.isAuthenticated)
+const alternar = (event) => {
+  temaStore.alternarModoNocturno(authStore.isAuthenticated, event)
 }
 </script>
 
@@ -45,7 +45,7 @@ const alternar = () => {
     <!-- Etiqueta contextual -->
     <span
       :class="[
-        'text-[11px] font-bold tracking-tight transition-all duration-250 motion-reduce:transition-none whitespace-nowrap',
+        'text-[11px] font-bold tracking-tight transition-all duration-300 ease-in-out motion-reduce:transition-none whitespace-nowrap',
         esNocturno ? 'pl-2.5 pr-8 text-left w-full' : 'pl-8 pr-2 text-right w-full',
       ]"
     >
@@ -54,6 +54,7 @@ const alternar = () => {
 
     <!-- Knob circular deslizante -->
     <span
+      data-testid="theme-toggle-knob"
       :class="[
         'absolute top-1 w-7 h-7 rounded-full flex items-center justify-center shadow-xs border',
         'transition-transform duration-500 ease-in-out motion-reduce:transition-none',

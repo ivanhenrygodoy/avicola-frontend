@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { nextTick } from 'vue'
 import { temaService } from '@/services/tema'
 
 const CLAVE_MODO = 'avicola_modo_tema'
@@ -111,28 +112,96 @@ export const useTemaStore = defineStore('tema', {
       }
     },
 
-    async alternarModoNocturno(autenticado = false) {
-      if (typeof document !== 'undefined') {
-        const root = document.documentElement
-        root.classList.add('theme-transitioning')
-        // Forzar reflow para que el navegador registre la transición antes de cambiar las variables
-        void root.offsetHeight
-        window.clearTimeout(window.__avicolaThemeTransitionTimer)
-        window.__avicolaThemeTransitionTimer = window.setTimeout(() => {
-          root.classList.remove('theme-transitioning')
-        }, 720)
+    async alternarModoNocturno(autenticado = false, event = null) {
+      const cambiarEstado = () => {
+        const nuevoModo = this.modo === 'nocturno' ? 'claro' : 'nocturno'
+        this.modo = nuevoModo
+        guardarModoLocal(nuevoModo)
+        this.aplicarAlDocumento()
+        return nuevoModo
       }
 
-      const nuevoModo = this.modo === 'nocturno' ? 'claro' : 'nocturno'
-      this.modo = nuevoModo
-      guardarModoLocal(nuevoModo)
-      this.aplicarAlDocumento()
+      // Comprobar soporte nativo de View Transitions API y preferencias de accesibilidad
+      const soportaViewTransition = typeof document !== 'undefined'
+        && typeof document.startViewTransition === 'function'
+        && !window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
-      if (autenticado) {
+      if (!soportaViewTransition) {
+        if (typeof document !== 'undefined') {
+          const root = document.documentElement
+          root.classList.add('theme-transitioning')
+          window.clearTimeout(window.__avicolaThemeTransitionTimer)
+          window.__avicolaThemeTransitionTimer = window.setTimeout(() => {
+            root.classList.remove('theme-transitioning')
+          }, 720)
+        }
+
+        const nuevoModo = cambiarEstado()
+
+        if (autenticado) {
+          try {
+            await temaService.guardarPreferenciaUsuario(nuevoModo)
+          } catch {
+            // Falla silenciosa: el cambio visual inmediato se mantiene en localStorage
+          }
+        }
+        return
+      }
+
+      // Calcular origen del efecto circular (coordenadas del clic o centro del botón)
+      let x = window.innerWidth / 2
+      let y = 0
+
+      if (event && typeof event.clientX === 'number' && typeof event.clientY === 'number' && (event.clientX !== 0 || event.clientY !== 0)) {
+        x = event.clientX
+        y = event.clientY
+      } else if (event?.currentTarget instanceof HTMLElement) {
+        const rect = event.currentTarget.getBoundingClientRect()
+        x = rect.left + rect.width / 2
+        y = rect.top + rect.height / 2
+      }
+
+      // Radio máximo para cubrir toda la pantalla desde el punto de origen
+      const endRadius = Math.hypot(
+        Math.max(x, window.innerWidth - x),
+        Math.max(y, window.innerHeight - y)
+      )
+
+      let nuevoModo
+      const transition = document.startViewTransition(async () => {
+        nuevoModo = cambiarEstado()
+        await nextTick()
+      })
+
+      try {
+        await transition.ready
+
+        const clipPath = [
+          `circle(0px at ${x}px ${y}px)`,
+          `circle(${endRadius}px at ${x}px ${y}px)`,
+        ]
+
+        const animation = document.documentElement.animate(
+          {
+            clipPath,
+          },
+          {
+            duration: 700,
+            easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
+            pseudoElement: '::view-transition-new(root)',
+          }
+        )
+
+        await animation.finished
+      } catch {
+        // En caso de que la animación sea abortada por el navegador
+      }
+
+      if (autenticado && nuevoModo) {
         try {
           await temaService.guardarPreferenciaUsuario(nuevoModo)
         } catch {
-          // Falla silenciosa: el cambio visual inmediato se mantiene en localStorage
+          // Falla silenciosa
         }
       }
     },

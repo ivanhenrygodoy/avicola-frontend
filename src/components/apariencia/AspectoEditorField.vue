@@ -28,7 +28,7 @@ const esHexValido = computed(() => /^#[0-9A-Fa-f]{6}$/.test(String(props.modelVa
 
 const PRESETS_SOMBRA = [
   { value: 'none', label: 'Sin sombra (plano)' },
-  { value: '0 1px 2px 0 rgb(0 0 0 / 0.05)', label: 'Sutil (DESIGN.md)' },
+  { value: '0 1px 2px 0 rgb(0 0 0 / 0.05)', label: 'Sutil (Predeterminada)' },
   { value: '0 4px 12px -2px rgb(38 51 43 / 0.08)', label: 'Media orgánica' },
   { value: '0 10px 25px -5px rgb(0 0 0 / 0.15)', label: 'Elevada marcada' },
   { value: '0 1px 3px 0 rgb(0 0 0 / 0.35)', label: 'Nocturna sutil' },

@@ -143,7 +143,7 @@ const guardarCambios = async () => {
     try {
       await temaStore.guardarComponente(temaStore.componenteActual.clave, modoEdicion.value, payloadAspectos)
       cargarBorrador()
-      notify.success(`Apariencia de «${temaStore.componenteActual.nombre}» actualizada.`)
+      notify.success(`Apariencia de ${temaStore.componenteActual.nombre} actualizada.`)
     } catch (err) {
       if (err.response?.status === 422) {
         notify.warning(err.response.data?.message || 'Algunos valores no son válidos.')
@@ -162,7 +162,7 @@ const ejecutarRestaurarComponente = async () => {
     try {
       await temaStore.restaurarComponente(temaStore.componenteActual.clave, modoEdicion.value)
       cargarBorrador()
-      notify.success(`Se restauraron los valores por defecto de «${temaStore.componenteActual.nombre}».`)
+      notify.success(`Valores predeterminados de ${temaStore.componenteActual.nombre} restaurados.`)
     } catch {
       notify.error('Error al restaurar el componente.')
     }
@@ -175,7 +175,7 @@ const ejecutarRestaurarTodo = async () => {
     try {
       await temaStore.restaurarTodo()
       cargarBorrador()
-      notify.success('Toda la paleta del sistema fue restaurada a DESIGN.md.')
+      notify.success('Toda la paleta del sistema fue restaurada a los valores predeterminados.')
     } catch {
       notify.error('No se pudo restaurar la paleta completa.')
     }
@@ -220,7 +220,7 @@ onMounted(async () => {
         title="Componentes Personalizados"
         :value="totalPersonalizados"
         :value-color-class="totalPersonalizados > 0 ? 'text-huevo' : 'text-bosque'"
-        subtitle="Con cambios respecto a DESIGN.md"
+        subtitle="Con cambios respecto a los valores predeterminados"
       />
       <StatCard
         title="Modo Activo en Sesión"
@@ -351,7 +351,7 @@ onMounted(async () => {
     <BaseConfirmModal
       :is-open="confirmRestaurarComponente"
       title="Restaurar valores por defecto"
-      :message="`¿Deseas restablecer los colores originales de «${temaStore.componenteActual?.nombre || ''}» para el modo ${modoEdicion}?`"
+      :message="`¿Deseas restablecer los colores predeterminados de ${temaStore.componenteActual?.nombre || 'este componente'} para el modo ${modoEdicion}?`"
       confirm-text="Sí, restaurar"
       @confirm="ejecutarRestaurarComponente"
       @close="confirmRestaurarComponente = false"
@@ -361,7 +361,7 @@ onMounted(async () => {
     <BaseConfirmModal
       :is-open="confirmRestaurarTodo"
       title="Restaurar toda la paleta"
-      message="Esta acción devolverá todos los componentes (modo claro y nocturno) a los colores originales de DESIGN.md."
+      message="Esta acción devolverá todos los componentes (modo claro y nocturno) a los colores predeterminados del sistema."
       confirm-text="Sí, restaurar todo"
       @confirm="ejecutarRestaurarTodo"
       @close="confirmRestaurarTodo = false"
